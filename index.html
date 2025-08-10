@@ -1945,7 +1945,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 updateSnippetButtons();
             };
             
-            const saveVersion = async (isMajor = false) => { // 1. Adiciona a palavra "async"
+            const saveVersion = async (isMajor = false) => {
                 const title = titleInput.value.trim();
                 const project = projectInput.value.trim();
                 const content = mainEditor.value.trim();
@@ -1964,42 +1964,48 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 const currentTags = [...tagsContainer.querySelectorAll('.prompt-tag span')].map(span => span.textContent);
 
-                let newVersionNumber = '1.0';
+                let newVersionNumber;
                 let promptIdToUse;
+
                 if (selectedVersionId === null) {
+                    // CASO 1: Nenhum prompt selecionado (clicou em "Add Prompt").
+                    // Sempre cria um novo prompt pai, versão 1.0.
                     promptIdToUse = Date.now();
+                    newVersionNumber = '1.0';
                 } else {
+                    // CASO 2: Um prompt existente está selecionado.
                     const currentPrompt = prompts.find(p => p.id === selectedVersionId);
                     promptIdToUse = currentPrompt.promptId;
                     const versionsOfSamePrompt = prompts.filter(p => p.promptId === promptIdToUse);
-                    if (versionsOfSamePrompt.length > 0) {
-                        const latestVersion = versionsOfSamePrompt.sort((a, b) => {
-                            const [majorA, minorA = 0] = a.version.split('.').map(Number);
-                            const [majorB, minorB = 0] = b.version.split('.').map(Number);
-                            if (majorA !== majorB) return majorB - majorA;
-                            return minorB - minorA;
-                        })[0];
-                        const [major, minor = 0] = latestVersion.version.split('.').map(Number);
-                        if (isMajor) {
-                            newVersionNumber = `${major + 1}.0`;
-                        } else {
-                            newVersionNumber = `${major}.${(minor || 0) + 1}`;
-                        }
+                    
+                    const latestVersion = versionsOfSamePrompt.sort((a, b) => {
+                        const [majorA, minorA = 0] = a.version.split('.').map(Number);
+                        const [majorB, minorB = 0] = b.version.split('.').map(Number);
+                        if (majorA !== majorB) return majorB - majorA;
+                        return minorB - minorA;
+                    })[0];
+                    
+                    const [major, minor = 0] = latestVersion.version.split('.').map(Number);
+
+                    if (isMajor) {
+                        // Se for "Save Major", incrementa o número principal e zera o secundário.
+                        newVersionNumber = `${major + 1}.0`;
+                    } else {
+                        // Se for "Save New" (minor), incrementa o número secundário.
+                        newVersionNumber = `${major}.${(minor || 0) + 1}`;
                     }
                 }
 
                 const newVersion = {
                     id: Date.now(),
-                    promptid: promptIdToUse, // Nota: a coluna no SQL é promptid
+                    promptId: promptIdToUse, // <-- propriedade atualizada
                     title, project, content,
                     version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId,
                     temperature, topP, effort, tags: currentTags, comments
                 };
 
-                // 2. Salva no Supabase e espera a operação terminar
                 await upsertItem('prompts', newVersion);
-
-                // 3. Atualiza a lista local para a interface reagir imediatamente
+                
                 prompts.push(newVersion);
                 loadVersionIntoEditor(newVersion.id);
             };
