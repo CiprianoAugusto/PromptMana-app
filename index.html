@@ -1338,6 +1338,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (tagName && !xmlTags.includes(tagName)) {
                     xmlTags.push(tagName);
                     saveXmlTagsToStorage();
+                    updateGlobalList('xml_tags', xmlTags);
                     xmlTagInput.value = '';
                 }
             };
@@ -1351,6 +1352,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     if (!varLibrary.includes(varName)) {
                         varLibrary.push(varName);
                         saveVarLibraryToStorage();
+                        updateGlobalList('var_library', varLibrary)
                         varLibraryInput.value = '';
                     }
                 }
@@ -2604,6 +2606,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         llmList[newVal] = llmList[oldVal];
                         delete llmList[oldVal];
                         saveLlmListToStorage();
+                        updateGlobalList('llm_list', llmList);
                         populateLlmSelect();
                     }
                 } else if (type === 'llm-model') {
@@ -2684,6 +2687,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     selectedInputId = newId;
                 }
                 saveInputGalleryToStorage();
+                upsertItem('input_gallery', inputGallery);
                 renderInputGallery();
             };
 
@@ -3106,6 +3110,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                     const newTemplate = { ...templateData, name: templateName, id: Date.now() };
                                     templates.push(newTemplate);
                                     saveTemplatesToStorage();
+                                    upsertItem('templates', newTemplate);
                                     hideModal();
                                     setTimeout(() => {
                                         showModal('Success', `Template "${templateName}" saved.`, [{ text: 'OK', className: 'action-button primary', onClick: hideModal }]);
@@ -3415,6 +3420,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                             if (llmList[category]) {
                                                 llmList[category] = llmList[category].filter(m => m !== value);
                                                 saveLlmListToStorage();
+                                                updateGlobalList('llm_list', llmList);
                                                 populateLlmSelect();
                                                 updatePrompts = true;
                                             }
@@ -3481,6 +3487,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (categoryName && !llmList[categoryName]) {
                     llmList[categoryName] = [];
                     saveLlmListToStorage();
+                    updateGlobalList('llm_list', llmList);
                     addLlmCategoryManagerInput.value = '';
                     renderListManager();
                     populateLlmSelect();
@@ -3623,6 +3630,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 savedFlows.push(flowData);
                             }
                             saveFlowsToStorage();
+                            upsertItem('node_flows', savedFlows);
                             renderSavedFlowsList();
                             savedFlowsDropdown.value = flowName;
                             hideModal();
@@ -3660,6 +3668,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const y = (e.clientY - canvasRect.top - currentTransform.y) / currentTransform.k;
 
                 const newNode = {
+                    id: Date.now()
                     promptId: versionId,
                     x: x - 140, // Centraliza o card no drop
                     y: y - 80,
