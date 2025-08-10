@@ -1314,8 +1314,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             };
 
             const deleteItemsByPromptId = async (promptId) => {
-                const { error } = await supabaseClient.from('prompts').delete().eq('prompt_id', promptId);
-                if (error) console.error(`Error deleting prompts by prompt_id:`, error);
+                const { error } = await supabaseClient.from('prompts').delete().eq('promptid', promptId);
+                if (error) console.error(`Error deleting prompts by promptid:`, error);
             };
 
             const updateGlobalList = async (listName, data) => {
@@ -1990,7 +1990,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 const newVersion = {
                     id: Date.now(),
-                    prompt_id: promptIdToUse, // Nota: a coluna no SQL é prompt_id
+                    promptid: promptIdToUse, // Nota: a coluna no SQL é promptid
                     title, project, content,
                     version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId,
                     temperature, topP, effort, tags: currentTags, comments
