@@ -1997,7 +1997,6 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
 
                 const newVersion = {
-                    id: Date.now(),
                     promptId: promptIdToUse, // <-- propriedade atualizada
                     title, project, content,
                     version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId,
@@ -2020,7 +2019,6 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (!originalPrompt) return;
             
                 const newFork = {
-                    id: Date.now(),
                     promptId: Date.now(), // Cria um novo grupo (ID de prompt)
                     title: `(Fork) ${originalPrompt.title}`,
                     project: originalPrompt.project,
@@ -3662,7 +3660,6 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const y = (e.clientY - canvasRect.top - currentTransform.y) / currentTransform.k;
 
                 const newNode = {
-                    id: Date.now(),
                     promptId: versionId,
                     x: x - 140, // Centraliza o card no drop
                     y: y - 80,
