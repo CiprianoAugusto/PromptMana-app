@@ -1299,6 +1299,27 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
             };
 
+                        // Funções para salvar/atualizar/deletar dados individuais
+            const upsertItem = async (table, data) => {
+                const { error } = await supabaseClient.from(table).upsert(data);
+                if (error) console.error(`Error upserting to ${table}:`, error);
+            };
+
+            const deleteItem = async (table, id) => {
+                const { error } = await supabaseClient.from(table).delete().eq('id', id);
+                if (error) console.error(`Error deleting from ${table}:`, error);
+            };
+
+            const deleteItemsByPromptId = async (promptId) => {
+                const { error } = await supabaseClient.from('prompts').delete().eq('prompt_id', promptId);
+                if (error) console.error(`Error deleting prompts by prompt_id:`, error);
+            };
+
+            const updateGlobalList = async (listName, data) => {
+                const { error } = await supabaseClient.from('global_lists').update({ data }).eq('name', listName);
+                if (error) console.error(`Error updating global list ${listName}:`, error);
+            }
+
             const savePromptsToStorage = () => localStorage.setItem(PROMPTS_STORAGE_KEY, JSON.stringify(prompts));
             const saveXmlTagsToStorage = () => localStorage.setItem(XML_TAGS_STORAGE_KEY, JSON.stringify(xmlTags));
             const saveTemplatesToStorage = () => localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
@@ -1919,7 +1940,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 updateSnippetButtons();
             };
             
-            const saveVersion = (isMajor = false) => {
+            const saveVersion = async (isMajor = false) => { // 1. Adiciona a palavra "async"
                 const title = titleInput.value.trim();
                 const project = projectInput.value.trim();
                 const content = mainEditor.value.trim();
@@ -1930,15 +1951,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const temperature = parseFloat(temperatureSlider.value);
                 const topP = parseFloat(topPSlider.value);
                 const effort = effortLevels[effortSlider.value];
-            
-                // Validação
-                if (!project) { showValidationAlert('Please fill in the "Project" field.'); return; }
-                if (!title) { showValidationAlert('Please fill in the "Title" field.'); return; }
-                if (!content) { showValidationAlert('The prompt field cannot be empty.'); return; }
-                if (llm === 'generic') { showValidationAlert('Please select a "Target LLM".'); return; }
-            
+
+                if (!project || !title || !content || llm === 'generic') {
+                    showValidationAlert('Project, Title, Content, and Target LLM are required fields.');
+                    return;
+                }
+
                 const currentTags = [...tagsContainer.querySelectorAll('.prompt-tag span')].map(span => span.textContent);
-            
+
                 let newVersionNumber = '1.0';
                 let promptIdToUse;
                 if (selectedVersionId === null) {
@@ -1947,27 +1967,35 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const currentPrompt = prompts.find(p => p.id === selectedVersionId);
                     promptIdToUse = currentPrompt.promptId;
                     const versionsOfSamePrompt = prompts.filter(p => p.promptId === promptIdToUse);
-                    const latestVersion = versionsOfSamePrompt.sort((a, b) => {
-                        const [majorA, minorA = 0] = a.version.split('.').map(Number);
-                        const [majorB, minorB = 0] = b.version.split('.').map(Number);
-                        if (majorA !== majorB) return majorB - majorA;
-                        return minorB - minorA;
-                    })[0];
-                    const [major, minor = 0] = latestVersion.version.split('.').map(Number);
-                    if (isMajor) {
-                        newVersionNumber = `${major + 1}.0`;
-                    } else {
-                        newVersionNumber = `${major}.${minor + 1}`;
+                    if (versionsOfSamePrompt.length > 0) {
+                        const latestVersion = versionsOfSamePrompt.sort((a, b) => {
+                            const [majorA, minorA = 0] = a.version.split('.').map(Number);
+                            const [majorB, minorB = 0] = b.version.split('.').map(Number);
+                            if (majorA !== majorB) return majorB - majorA;
+                            return minorB - minorA;
+                        })[0];
+                        const [major, minor = 0] = latestVersion.version.split('.').map(Number);
+                        if (isMajor) {
+                            newVersionNumber = `${major + 1}.0`;
+                        } else {
+                            newVersionNumber = `${major}.${(minor || 0) + 1}`;
+                        }
                     }
                 }
-            
+
                 const newVersion = {
-                    id: Date.now(), promptId: promptIdToUse, title, project, content,
+                    id: Date.now(),
+                    prompt_id: promptIdToUse, // Nota: a coluna no SQL é prompt_id
+                    title, project, content,
                     version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId,
                     temperature, topP, effort, tags: currentTags, comments
                 };
+
+                // 2. Salva no Supabase e espera a operação terminar
+                await upsertItem('prompts', newVersion);
+
+                // 3. Atualiza a lista local para a interface reagir imediatamente
                 prompts.push(newVersion);
-                savePromptsToStorage();
                 loadVersionIntoEditor(newVersion.id);
             };
             
