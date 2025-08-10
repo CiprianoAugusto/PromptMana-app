@@ -12,6 +12,7 @@
     <!-- Bibliotecas Externas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -1000,6 +1001,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+                    // --- CONFIGURAÇÃO DO SUPABASE ---
+            const SUPABASE_URL = 'https://bjegpjohwquugyvfkict.supabase.co';
+            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWdwam9od3F1dWd5dmZraWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDkzMzksImV4cCI6MjA3MDQyNTMzOX0.0finKmSTim82UkBYY4Chnpa8O_WsKLCqIGrd892IFcY';
+            const { createClient } = supabase;
+            const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
             const PROMPTS_STORAGE_KEY = 'promptManagerApp_prompts';
             const XML_TAGS_STORAGE_KEY = 'promptManagerApp_xmlTags';
             const TEMPLATES_STORAGE_KEY = 'promptManagerApp_templates';
@@ -1256,53 +1263,39 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const saveFlowBtn = document.getElementById('save-flow-btn');
             const savedFlowsDropdown = document.getElementById('saved-flows-dropdown');
 
+            // --- FUNÇÕES DE DADOS (AGORA COM SUPABASE) ---
+            const loadDataFromSupabase = async () => {
+                try {
+                    console.log("Fetching data from Supabase...");
 
-            // --- FUNÇÕES DE DADOS (LOCALSTORAGE) ---
-            const loadDataFromStorage = () => {
-                const storedPrompts = localStorage.getItem(PROMPTS_STORAGE_KEY);
-                prompts = storedPrompts ? JSON.parse(storedPrompts) : [
-                    { id: 1, promptId: 1, project: 'Marketing Digital', title: 'Gerador de Ideias', content: 'Gerar 5 ideias criativas para posts de blog sobre {{tema}}.', version: '1.0', status: 'write', llm: 'gpt-4o', date: '2025-08-08T18:30:00.000Z', parentId: null, temperature: 0.7, topP: 0.9, effort: 'Medium', tags: ['#marketing-digital', '#gpt-4o'], comments: 'Versão inicial focada em 5 ideias.' },
-                    { id: 2, promptId: 1, project: 'Marketing Digital', title: 'Gerador de Ideias', content: 'Gerar 10 ideias criativas e inovadoras para posts de blog sobre {{tema}}, com foco em reciclagem.', version: '1.1', status: 'edit', llm: 'gpt-4-turbo', date: '2025-08-08T18:35:00.000Z', parentId: 1, temperature: 0.8, topP: 1, effort: 'High', tags: ['#marketing-digital', '#gpt-4-turbo', '#creative'], comments: 'Aumentado para 10 ideias e adicionado foco em reciclagem para testar especificidade.' },
-                    { id: 3, promptId: 2, project: 'Email Campaigns', title: 'Assunto de Email', content: 'Criar 3 assuntos chamativos para um email de marketing sobre o produto {{produto}}.', version: '1.0', status: 'use', llm: 'claude-3.5-sonnet', date: '2025-08-08T18:40:00.000Z', parentId: null, temperature: 0.9, topP: 0.95, effort: 'Medium', tags: ['#email-campaigns', '#claude-3.5-sonnet'], comments: '' },
-                ];
-                const storedTags = localStorage.getItem(XML_TAGS_STORAGE_KEY);
-                xmlTags = storedTags ? JSON.parse(storedTags) : ['instrucao', 'exemplo', 'documento'];
-                const storedTemplates = localStorage.getItem(TEMPLATES_STORAGE_KEY);
-                templates = storedTemplates ? JSON.parse(storedTemplates) : [];
-                const storedVarLibrary = localStorage.getItem(VAR_LIBRARY_STORAGE_KEY);
-                varLibrary = storedVarLibrary ? JSON.parse(storedVarLibrary) : ['{{cliente}}', '{{produto}}'];
-                
-                const storedInputGallery = localStorage.getItem(INPUT_GALLERY_STORAGE_KEY);
-                inputGallery = storedInputGallery ? JSON.parse(storedInputGallery) : [
-                    { id: Date.now() + 1, name: 'Persona de Marketing', content: 'Você é um especialista em marketing digital com 10 anos de experiência.'},
-                    { id: Date.now() + 2, name: 'Tom de Voz Amigável', content: 'Use um tom de voz amigável e acessível.'}
-                ];
+                    const { data: promptsData, error: promptsError } = await supabaseClient.from('prompts').select('*');
+                    if (promptsError) throw promptsError;
+                    prompts = promptsData || [];
 
-                const storedFlows = localStorage.getItem(NODE_FLOWS_STORAGE_KEY);
-                savedFlows = storedFlows ? JSON.parse(storedFlows) : [];
+                    const { data: templatesData, error: templatesError } = await supabaseClient.from('templates').select('*');
+                    if (templatesError) throw templatesError;
+                    templates = templatesData || [];
 
-                // Carregar lista de LLMs
-                const storedLlmList = localStorage.getItem(LLM_LIST_STORAGE_KEY);
-                if (storedLlmList) {
-                    const parsed = JSON.parse(storedLlmList);
-                    // Migração de dados: se for um array antigo, converte para o novo formato de objeto
-                    if (Array.isArray(parsed)) {
-                        llmList = { "Modelos Antigos": parsed };
-                        saveLlmListToStorage();
-                    } else {
-                        llmList = parsed;
-                    }
-                } else {
-                    // Estrutura padrão se não houver nada salvo
-                    llmList = {
-                        "Google — Gemini": ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5", "gemini-2.0-pro", "gemini-2.0", "gemini-1.5-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.5-pro-multi", "gemini-1.0-pro", "gemini-1.0-pro-multi", "gemini-nano", "gemini-ultra"],
-                        "OpenAI — GPT": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo-16k"],
-                        "Anthropic — Claude": ["claude-3.5-sonnet", "claude-3-opus", "claude-3-sonnet", "claude-3-haiku", "claude-2.1", "claude-2", "claude-instant-1.2"],
-                        "Meta — Llama": ["llama-3.1-405b", "llama-3.1-70b", "llama-3.1-8b", "llama-3-70b", "llama-3-8b", "code-llama"],
-                        "Mistral AI": ["mistral-large-2", "mixtral-8x7b", "mistral-small", "mistral-7b"],
-                        "xAI — Grok": ["grok-1.5-vision", "grok-1.5", "grok-1"],
-                        "Outros Provedores": ["cohere-command-r", "stability-stablelm", "falcon-40b"]
-                    };
+                    const { data: inputGalleryData, error: inputGalleryError } = await supabaseClient.from('input_gallery').select('*');
+                    if (inputGalleryError) throw inputGalleryError;
+                    inputGallery = inputGalleryData || [];
+
+                    const { data: nodeFlowsData, error: nodeFlowsError } = await supabaseClient.from('node_flows').select('*');
+                    if (nodeFlowsError) throw nodeFlowsError;
+                    savedFlows = nodeFlowsData || [];
+
+                    const { data: listsData, error: listsError } = await supabaseClient.from('global_lists').select('*');
+                    if (listsError) throw listsError;
+
+                    xmlTags = listsData.find(l => l.name === 'xml_tags')?.data || [];
+                    varLibrary = listsData.find(l => l.name === 'var_library')?.data || [];
+                    llmList = listsData.find(l => l.name === 'llm_list')?.data || {};
+
+                    console.log("Data fetched successfully!");
+
+                } catch (error) {
+                    console.error("Error loading data from Supabase:", error);
+                    alert("Could not load data from the database. Please check the console for errors.");
                 }
             };
 
@@ -3794,9 +3787,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
 
             // --- INICIALIZAÇÃO ---
-            loadDataFromStorage();
-            populateLlmSelect(); // Popula o select principal com a lista de LLMs
-            clearEditorForNewPrompt();
+            const initializeApp = async () => {
+                await loadDataFromSupabase(); // Espera os dados do Supabase carregarem
+                populateLlmSelect();
+                clearEditorForNewPrompt();
+            };
+
+            initializeApp();
         });
     </script>
 </body>
