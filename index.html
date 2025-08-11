@@ -1878,7 +1878,6 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (itemToDelete.type === 'group') {
                     await deleteItemsByPromptId(itemToDelete.id);
                     prompts = prompts.filter(p => p.promptId !== itemToDelete.id);
-                    await upsertItem('prompts', prompts);
                     if (selectedVersionId && !prompts.some(p => p.id === selectedVersionId)) {
                         clearEditorForNewPrompt();
                     }
@@ -2339,7 +2338,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                     childPrompt.parentId = firstNodeForConnection.id;
                                     savePromptsToStorage();
                                     renderDependencyGraph({ project: graphProjectFilter.value });
-                                    await upsertItem('prompts', prompts);
+                                    await upsertItem('prompts', childPrompt);
                                 }
                             }
                             isCreatingConnection = false;
@@ -2685,6 +2684,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     if (index > -1) {
                         inputGallery[index].name = name;
                         inputGallery[index].content = content;
+                        itemToSave = inputGallery[index];
                     }
                 } else { // Criando um novo
                     const newId = crypto.randomUUID();
@@ -3081,7 +3081,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 onClick: async () => {
                                     templates = templates.filter(t => t.id !== templateId);
                                     saveTemplatesToStorage();
-                                    await upsertItem('templates', templates);
+                                    await deleteItem('templates', templateId);
                                     renderTemplatesGrid();
                                     hideModal();
                                 }
@@ -3251,6 +3251,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     if (childPrompt) {
                         childPrompt.parentId = null;
                         savePromptsToStorage();
+                        await upsertItem('prompts', childPrompt);
                         // Re-render the graph with the current filter
                         renderDependencyGraph({ project: graphProjectFilter.value });
                         // Reset state
@@ -3648,6 +3649,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 savedFlows.push(flowData);
                             }
                             saveFlowsToStorage();
+                            await upsertItem('node_flows', flowData);
                             upsertItem('node_flows', savedFlows);
                             renderSavedFlowsList();
                             savedFlowsDropdown.value = flowName;
