@@ -14,16 +14,19 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        mono: ['Roboto Mono', 'monospace'],
+        // Fallback configuration if Tailwind fails to load
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ['Inter', 'sans-serif'],
+                            mono: ['Roboto Mono', 'monospace'],
+                        },
                     },
                 },
-            },
+            }
         }
     </script>
     <style>
@@ -1008,11 +1011,21 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     // --- CONFIGURAÇÃO DO SUPABASE ---
             const SUPABASE_URL = 'https://bjegpjohwquugyvfkict.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWdwam9od3F1dWd5dmZraWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDkzMzksImV4cCI6MjA3MDQyNTMzOX0.0finKmSTim82UkBYY4Chnpa8O_WsKLCqIGrd892IFcY';
-            const { createClient } = supabase;
-            const supabaseClient = createClient(
-                'https://bjegpjohwquugyvfkict.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWdwam9od3F1dWd5dmZraWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDkzMzksImV4cCI6MjA3MDQyNTMzOX0.0finKmSTim82UkBYY4Chnpa8O_WsKLCqIGrd892IFcY'
-            );
+            
+            // Initialize Supabase client with error handling
+            let supabaseClient = null;
+            try {
+                if (typeof supabase !== 'undefined') {
+                    const { createClient } = supabase;
+                    supabaseClient = createClient(
+                        'https://bjegpjohwquugyvfkict.supabase.co',
+                        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWdwam9od3F1dWd5dmZraWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDkzMzksImV4cCI6MjA3MDQyNTMzOX0.0finKmSTim82UkBYY4Chnpa8O_WsKLCqIGrd892IFcY'
+                    );
+                }
+            } catch (error) {
+                console.warn('Supabase not available, using localStorage fallback:', error);
+                supabaseClient = null;
+            }
 
             const PROMPTS_STORAGE_KEY = 'promptManagerApp_prompts';
             const XML_TAGS_STORAGE_KEY = 'promptManagerApp_xmlTags';
@@ -1055,7 +1068,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             let isDrawingConnection = false;
             let connectionStartNodeId = null;
             let tempLine = null;
-            let currentTransform = d3.zoomIdentity;
+            let currentTransform = typeof d3 !== 'undefined' ? d3.zoomIdentity : { x: 0, y: 0, k: 1, apply: (coords) => coords };
 
 
             // --- ELEMENTOS DO DOM ---
@@ -1295,83 +1308,243 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             // --- FUNÇÕES DE DADOS (AGORA COM SUPABASE) ---
             const loadDataFromSupabase = async () => {
                 try {
-                    console.log("Fetching data from Supabase...");
+                    if (supabaseClient) {
+                        console.log("Fetching data from Supabase...");
 
-                    const { data: promptsData, error: promptsError } = await supabaseClient.from('prompts').select('*');
-                    if (promptsError) throw promptsError;
-                    prompts = promptsData || [];
+                        const { data: promptsData, error: promptsError } = await supabaseClient.from('prompts').select('*');
+                        if (promptsError) throw promptsError;
+                        prompts = promptsData || [];
 
-                    const { data: templatesData, error: templatesError } = await supabaseClient.from('templates').select('*');
-                    if (templatesError) throw templatesError;
-                    templates = templatesData || [];
+                        const { data: templatesData, error: templatesError } = await supabaseClient.from('templates').select('*');
+                        if (templatesError) throw templatesError;
+                        templates = templatesData || [];
 
-                    const { data: inputGalleryData, error: inputGalleryError } = await supabaseClient.from('input_gallery').select('*');
-                    if (inputGalleryError) throw inputGalleryError;
-                    inputGallery = inputGalleryData || [];
+                        const { data: inputGalleryData, error: inputGalleryError } = await supabaseClient.from('input_gallery').select('*');
+                        if (inputGalleryError) throw inputGalleryError;
+                        inputGallery = inputGalleryData || [];
 
-                    const { data: nodeFlowsData, error: nodeFlowsError } = await supabaseClient.from('node_flows').select('*');
-                    if (nodeFlowsError) throw nodeFlowsError;
-                    savedFlows = nodeFlowsData || [];
+                        const { data: nodeFlowsData, error: nodeFlowsError } = await supabaseClient.from('node_flows').select('*');
+                        if (nodeFlowsError) throw nodeFlowsError;
+                        savedFlows = nodeFlowsData || [];
 
-                    const { data: listsData, error: listsError } = await supabaseClient.from('global_lists').select('*');
-                    if (listsError) throw listsError;
+                        const { data: listsData, error: listsError } = await supabaseClient.from('global_lists').select('*');
+                        if (listsError) throw listsError;
 
-                    xmlTags = listsData.find(l => l.name === 'xml_tags')?.data || [];
-                    varLibrary = listsData.find(l => l.name === 'var_library')?.data || [];
-                    llmList = listsData.find(l => l.name === 'llm_list')?.data || {};
+                        xmlTags = listsData.find(l => l.name === 'xml_tags')?.data || [];
+                        varLibrary = listsData.find(l => l.name === 'var_library')?.data || [];
+                        llmList = listsData.find(l => l.name === 'llm_list')?.data || {};
 
-                    console.log("Data fetched successfully!");
+                        console.log("Data fetched successfully from Supabase!");
+                    } else {
+                        // Fallback to localStorage
+                        console.log("Using localStorage fallback...");
+                        prompts = JSON.parse(localStorage.getItem(PROMPTS_STORAGE_KEY) || '[]');
+                        templates = JSON.parse(localStorage.getItem(TEMPLATES_STORAGE_KEY) || '[]');
+                        inputGallery = JSON.parse(localStorage.getItem(INPUT_GALLERY_STORAGE_KEY) || '[]');
+                        savedFlows = JSON.parse(localStorage.getItem(NODE_FLOWS_STORAGE_KEY) || '[]');
+                        xmlTags = JSON.parse(localStorage.getItem(XML_TAGS_STORAGE_KEY) || '[]');
+                        varLibrary = JSON.parse(localStorage.getItem(VAR_LIBRARY_STORAGE_KEY) || '[]');
+                        llmList = JSON.parse(localStorage.getItem(LLM_LIST_STORAGE_KEY) || '{}');
+                        
+                        // Initialize default data if localStorage is empty
+                        if (Object.keys(llmList).length === 0) {
+                            llmList = {
+                                'OpenAI': ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'],
+                                'Anthropic': ['claude-3-5-sonnet', 'claude-3-haiku'],
+                                'Google': ['gemini-pro', 'gemini-flash'],
+                                'Local': ['llama3', 'mistral']
+                            };
+                            localStorage.setItem(LLM_LIST_STORAGE_KEY, JSON.stringify(llmList));
+                        }
+                        
+                        if (xmlTags.length === 0) {
+                            xmlTags = ['system', 'user', 'assistant', 'thinking', 'example', 'context'];
+                            localStorage.setItem(XML_TAGS_STORAGE_KEY, JSON.stringify(xmlTags));
+                        }
+                        
+                        if (varLibrary.length === 0) {
+                            varLibrary = ['{{task}}', '{{context}}', '{{input}}', '{{format}}'];
+                            localStorage.setItem(VAR_LIBRARY_STORAGE_KEY, JSON.stringify(varLibrary));
+                        }
+                    }
 
                 } catch (error) {
-                    console.error("Error loading data from Supabase:", error);
-                    alert("Could not load data from the database. Please check the console for errors.");
+                    console.error("Error loading data:", error);
+                    console.log("Falling back to localStorage...");
+                    // Fallback to localStorage on any error
+                    prompts = JSON.parse(localStorage.getItem(PROMPTS_STORAGE_KEY) || '[]');
+                    templates = JSON.parse(localStorage.getItem(TEMPLATES_STORAGE_KEY) || '[]');
+                    inputGallery = JSON.parse(localStorage.getItem(INPUT_GALLERY_STORAGE_KEY) || '[]');
+                    savedFlows = JSON.parse(localStorage.getItem(NODE_FLOWS_STORAGE_KEY) || '[]');
+                    xmlTags = JSON.parse(localStorage.getItem(XML_TAGS_STORAGE_KEY) || '[]');
+                    varLibrary = JSON.parse(localStorage.getItem(VAR_LIBRARY_STORAGE_KEY) || '[]');
+                    llmList = JSON.parse(localStorage.getItem(LLM_LIST_STORAGE_KEY) || '{}');
+                    
+                    // Initialize default data if localStorage is empty
+                    if (Object.keys(llmList).length === 0) {
+                        llmList = {
+                            'OpenAI': ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'],
+                            'Anthropic': ['claude-3-5-sonnet', 'claude-3-haiku'],
+                            'Google': ['gemini-pro', 'gemini-flash'],
+                            'Local': ['llama3', 'mistral']
+                        };
+                        localStorage.setItem(LLM_LIST_STORAGE_KEY, JSON.stringify(llmList));
+                    }
+                    
+                    if (xmlTags.length === 0) {
+                        xmlTags = ['system', 'user', 'assistant', 'thinking', 'example', 'context'];
+                        localStorage.setItem(XML_TAGS_STORAGE_KEY, JSON.stringify(xmlTags));
+                    }
+                    
+                    if (varLibrary.length === 0) {
+                        varLibrary = ['{{task}}', '{{context}}', '{{input}}', '{{format}}'];
+                        localStorage.setItem(VAR_LIBRARY_STORAGE_KEY, JSON.stringify(varLibrary));
+                    }
                 }
             };
 
             // Funções para salvar/atualizar/deletar dados individuais
             const upsertItem = async (table, data) => {
-                delete data.id;
-                const { data: returnedData, error } = await supabaseClient
-                    .from(table)
-                    .insert(data)
-                    .select();
+                try {
+                    if (supabaseClient) {
+                        delete data.id;
+                        const { data: returnedData, error } = await supabaseClient
+                            .from(table)
+                            .insert(data)
+                            .select();
 
-                if (error) {
-                    console.error(`Error inserting to ${table}:`, error);
+                        if (error) {
+                            console.error(`Error inserting to ${table}:`, error);
+                            return null;
+                        }
+                        return returnedData && returnedData.length > 0 ? returnedData[0] : null;
+                    } else {
+                        // localStorage fallback
+                        const storageKey = getStorageKeyForTable(table);
+                        if (storageKey) {
+                            const existingData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                            if (Array.isArray(data)) {
+                                localStorage.setItem(storageKey, JSON.stringify(data));
+                                return data;
+                            } else {
+                                if (!data.id) {
+                                    data.id = Date.now(); // Simple ID generation
+                                }
+                                existingData.push(data);
+                                localStorage.setItem(storageKey, JSON.stringify(existingData));
+                                return data;
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error in upsertItem for ${table}:`, error);
                     return null;
                 }
-                return returnedData && returnedData.length > 0 ? returnedData[0] : null;
             };
 
             const updateItem = async (table, id, data) => {
-                const { data: returnedData, error } = await supabaseClient
-                    .from(table)
-                    .update(data)
-                    .eq('id', id)
-                    .select();
-                
-                if (error) {
-                    console.error(`Error updating item in ${table}:`, error);
+                try {
+                    if (supabaseClient) {
+                        const { data: returnedData, error } = await supabaseClient
+                            .from(table)
+                            .update(data)
+                            .eq('id', id)
+                            .select();
+                        
+                        if (error) {
+                            console.error(`Error updating item in ${table}:`, error);
+                            return null;
+                        }
+                        return returnedData && returnedData.length > 0 ? returnedData[0] : null;
+                    } else {
+                        // localStorage fallback
+                        const storageKey = getStorageKeyForTable(table);
+                        if (storageKey) {
+                            const existingData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                            const itemIndex = existingData.findIndex(item => item.id == id);
+                            if (itemIndex !== -1) {
+                                existingData[itemIndex] = { ...existingData[itemIndex], ...data };
+                                localStorage.setItem(storageKey, JSON.stringify(existingData));
+                                return existingData[itemIndex];
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error in updateItem for ${table}:`, error);
                     return null;
                 }
-                return returnedData && returnedData.length > 0 ? returnedData[0] : null;
             };
 
             const deleteItem = async (table, id) => {
-                const { error } = await supabaseClient.from(table).delete().eq('id', id);
-                if (error) {
-                    console.error(`Error deleting item from ${table}:`, error);
+                try {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient.from(table).delete().eq('id', id);
+                        if (error) {
+                            console.error(`Error deleting item from ${table}:`, error);
+                        }
+                    } else {
+                        // localStorage fallback
+                        const storageKey = getStorageKeyForTable(table);
+                        if (storageKey) {
+                            const existingData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                            const filteredData = existingData.filter(item => item.id != id);
+                            localStorage.setItem(storageKey, JSON.stringify(filteredData));
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error in deleteItem for ${table}:`, error);
                 }
+            };
+
+            // Helper function to map table names to localStorage keys
+            const getStorageKeyForTable = (table) => {
+                const keyMap = {
+                    'prompts': PROMPTS_STORAGE_KEY,
+                    'templates': TEMPLATES_STORAGE_KEY,
+                    'input_gallery': INPUT_GALLERY_STORAGE_KEY,
+                    'node_flows': NODE_FLOWS_STORAGE_KEY
+                };
+                return keyMap[table] || null;
             };
             
             const deleteItemsByPromptId = async (promptId) => {
-                const { error } = await supabaseClient.from('prompts').delete().eq('promptId', promptId);
-                if (error) console.error(`Error deleting prompts by promptid:`, error);
+                try {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient.from('prompts').delete().eq('promptId', promptId);
+                        if (error) console.error(`Error deleting prompts by promptid:`, error);
+                    } else {
+                        // localStorage fallback
+                        const existingData = JSON.parse(localStorage.getItem(PROMPTS_STORAGE_KEY) || '[]');
+                        const filteredData = existingData.filter(item => item.promptId != promptId);
+                        localStorage.setItem(PROMPTS_STORAGE_KEY, JSON.stringify(filteredData));
+                        // Update the global prompts array
+                        prompts = filteredData;
+                    }
+                } catch (error) {
+                    console.error(`Error in deleteItemsByPromptId:`, error);
+                }
             };
 
             const updateGlobalList = async (listName, data) => {
-                const { error } = await supabaseClient.from('global_lists').update({ data }).eq('name', listName);
-                if (error) console.error(`Error updating global list ${listName}:`, error);
+                try {
+                    if (supabaseClient) {
+                        const { error } = await supabaseClient.from('global_lists').update({ data }).eq('name', listName);
+                        if (error) console.error(`Error updating global list ${listName}:`, error);
+                    } else {
+                        // localStorage fallback
+                        const storageKeyMap = {
+                            'xml_tags': XML_TAGS_STORAGE_KEY,
+                            'var_library': VAR_LIBRARY_STORAGE_KEY,
+                            'llm_list': LLM_LIST_STORAGE_KEY
+                        };
+                        const storageKey = storageKeyMap[listName];
+                        if (storageKey) {
+                            localStorage.setItem(storageKey, JSON.stringify(data));
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error in updateGlobalList for ${listName}:`, error);
+                }
             }
 
             // --- FUNÇÕES DE LÓGICA ---
@@ -1993,7 +2166,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 updateSnippetButtons();
             };
             
-            cconst saveVersion = async (isMajor = false) => {
+            const saveVersion = async (isMajor = false) => {
                 const title = titleInput.value.trim();
                 const project = projectInput.value.trim();
                 const content = mainEditor.value.trim();
@@ -2056,8 +2229,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     };
                 }
 
-                // AQUI ESTÁ A CORREÇÃO PRINCIPAL: Usar insertItem em vez de upsertItem
-                const savedVersion = await insertItem('prompts', newVersionData);
+                // Save the new version data
+                const savedVersion = await upsertItem('prompts', newVersionData);
                 
                 if (savedVersion) {
                     prompts.push(savedVersion);
@@ -2275,6 +2448,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             // FUNÇÃO DO GRÁFICO DE DEPENDÊNCIAS
             // =================================================================
             const renderDependencyGraph = (filters = {}) => {
+                if (typeof d3 === 'undefined') {
+                    // Fallback when D3 is not available
+                    const container = document.getElementById('dependency-graph-svg').parentElement;
+                    container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted-dark);"><p>Graph visualization requires D3.js library. Please check your internet connection.</p></div>';
+                    return;
+                }
+                
                 const svg = d3.select("#dependency-graph-svg");
                 const container = svg.node().parentElement;
                 const width = container.clientWidth;
@@ -2839,6 +3019,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             }
 
             const renderFlowConnections = () => {
+                if (typeof d3 === 'undefined') return; // Skip if D3 not available
+                
                 const svg = d3.select("#connections-group");
                 svg.selectAll("path").remove();
                 
@@ -3239,25 +3421,33 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         [version1, version2] = [version2, version1];
                     }
 
-                    const dmp = new diff_match_patch();
-                    
-                    const diff1 = dmp.diff_main(version1.content, version2.content);
-                    dmp.diff_cleanupSemantic(diff1);
-                    
-                    const diff2 = dmp.diff_main(version2.content, version1.content);
-                    dmp.diff_cleanupSemantic(diff2);
-                    
-                    const cleanHtml = (html) => {
-                        return html
-                            .replace(/&para;/g, '')
-                            .replace(/ style="background:(#e6ffe6|#ffe6e6);"/gi, '');
-                    };
-
                     diffModalTitle.textContent = `Comparing v${version1.version} vs v${version2.version}`;
                     diffTitleA.textContent = `Version ${version1.version}`;
                     diffTitleB.textContent = `Version ${version2.version}`;
-                    diffPanelA.innerHTML = cleanHtml(dmp.diff_prettyHtml(diff1));
-                    diffPanelB.innerHTML = cleanHtml(dmp.diff_prettyHtml(diff2));
+                    
+                    if (typeof diff_match_patch !== 'undefined') {
+                        // Use diff_match_patch if available
+                        const dmp = new diff_match_patch();
+                        
+                        const diff1 = dmp.diff_main(version1.content, version2.content);
+                        dmp.diff_cleanupSemantic(diff1);
+                        
+                        const diff2 = dmp.diff_main(version2.content, version1.content);
+                        dmp.diff_cleanupSemantic(diff2);
+                        
+                        const cleanHtml = (html) => {
+                            return html
+                                .replace(/&para;/g, '')
+                                .replace(/ style="background:(#e6ffe6|#ffe6e6);"/gi, '');
+                        };
+
+                        diffPanelA.innerHTML = cleanHtml(dmp.diff_prettyHtml(diff1));
+                        diffPanelB.innerHTML = cleanHtml(dmp.diff_prettyHtml(diff2));
+                    } else {
+                        // Fallback: simple side-by-side comparison
+                        diffPanelA.innerHTML = `<pre style="white-space: pre-wrap;">${version1.content}</pre>`;
+                        diffPanelB.innerHTML = `<pre style="white-space: pre-wrap;">${version2.content}</pre>`;
+                    }
 
                     diffModal.classList.remove('hidden');
                 }
@@ -3675,17 +3865,20 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
 
             // --- EVENTOS DO NODE FLOW ---
-            const zoom = d3.zoom()
-                .scaleExtent([0.2, 2])
-                .on("zoom", (event) => {
-                    currentTransform = event.transform;
-                    nodeFlowContent.style.transform = `translate(${currentTransform.x}px, ${currentTransform.y}px) scale(${currentTransform.k})`;
-                    d3.select("#connections-group").attr("transform", null); // Remove transform do grupo!
-                    renderFlowConnections();
-                });
-                
-            d3.select("#node-flow-canvas")
-                .call(zoom);
+            let zoom = null;
+            if (typeof d3 !== 'undefined') {
+                zoom = d3.zoom()
+                    .scaleExtent([0.2, 2])
+                    .on("zoom", (event) => {
+                        currentTransform = event.transform;
+                        nodeFlowContent.style.transform = `translate(${currentTransform.x}px, ${currentTransform.y}px) scale(${currentTransform.k})`;
+                        d3.select("#connections-group").attr("transform", null); // Remove transform do grupo!
+                        renderFlowConnections();
+                    });
+                    
+                d3.select("#node-flow-canvas")
+                    .call(zoom);
+            }
 
             nodeFlowBtn.addEventListener('click', () => {
                 populateProjectList(nodeFlowProjectFilter);
