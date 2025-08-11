@@ -1006,7 +1006,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWdwam9od3F1dWd5dmZraWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDkzMzksImV4cCI6MjA3MDQyNTMzOX0.0finKmSTim82UkBYY4Chnpa8O_WsKLCqIGrd892IFcY';
             const { createClient } = supabase;
             const supabaseClient = createClient(
-                'https://bjegpjohwquugyvfkict.supabase.co', 
+                'https://bjegpjohwquugyvfkict.supabase.co',
                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWdwam9od3F1dWd5dmZraWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDkzMzksImV4cCI6MjA3MDQyNTMzOX0.0finKmSTim82UkBYY4Chnpa8O_WsKLCqIGrd892IFcY'
             );
 
@@ -1125,7 +1125,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 });
 
                 // Confirmar adição
-                confirmAddProjectBtn.addEventListener('click', () => {
+                confirmAddProjectBtn.addEventListener('click', async() => {
                     const newProjectName = newProjectNameInput.value.trim();
                     if (newProjectName) {
                         const datalist = document.getElementById('project-list-aside');
@@ -1878,6 +1878,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (itemToDelete.type === 'group') {
                     await deleteItemsByPromptId(itemToDelete.id);
                     prompts = prompts.filter(p => p.promptId !== itemToDelete.id);
+                    await upsertItem('prompts', prompts);
                     if (selectedVersionId && !prompts.some(p => p.id === selectedVersionId)) {
                         clearEditorForNewPrompt();
                     }
@@ -1972,7 +1973,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (selectedVersionId === null) {
                     // CASO 1: Nenhum prompt selecionado (clicou em "Add Prompt").
                     // Sempre cria um novo prompt pai, versão 1.0.
-                    promptIdToUse = Date.now();
+                    promptIdToUse = crypto.randomUUID();
                     newVersionNumber = '1.0';
                 } else {
                     // CASO 2: Um prompt existente está selecionado.
@@ -2011,7 +2012,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 loadVersionIntoEditor(newVersion.id);
             };
             
-            const forkVersion = () => {
+            const forkVersion = async () => {
                 if (!selectedVersionId) {
                     showValidationAlert('Please select a version to fork.');
                     return;
@@ -2039,6 +2040,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             
                 prompts.push(newFork);
                 savePromptsToStorage();
+                await upsertItem('prompts', newFork);
                 loadVersionIntoEditor(newFork.id);
             };
             
@@ -2325,7 +2327,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     graphTooltip.style.opacity = 0;
                 });
 
-                node.on("click", (event, d) => {
+                node.on("click", async (event, d) => {
                     if (isCreatingConnection) {
                         if (!firstNodeForConnection) {
                             firstNodeForConnection = d;
@@ -2337,6 +2339,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                     childPrompt.parentId = firstNodeForConnection.id;
                                     savePromptsToStorage();
                                     renderDependencyGraph({ project: graphProjectFilter.value });
+                                    await upsertItem('prompts', prompts);
                                 }
                             }
                             isCreatingConnection = false;
@@ -2665,7 +2668,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
             };
 
-            const saveCurrentInput = () => {
+            const saveCurrentInput = async () => {
                 const name = inputGalleryName.value.trim();
                 const content = inputGalleryEditor.value.trim();
                 const currentId = selectedInputId;
@@ -2675,6 +2678,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     return;
                 }
 
+                let itemToSave;
+
                 if (currentId) { // Editando um existente
                     const index = inputGallery.findIndex(i => i.id === currentId);
                     if (index > -1) {
@@ -2682,18 +2687,28 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         inputGallery[index].content = content;
                     }
                 } else { // Criando um novo
-                    const newId = Date.now();
-                    inputGallery.push({ id: newId, name, content });
+                    const newId = crypto.randomUUID();
+                    itemToSave = { id: newId, name, content };
+                    inputGallery.push(itemToSave);
                     selectedInputId = newId;
                 }
+                
+                if (itemToSave) {
+                    await upsertItem('input_gallery', itemToSave); // Salva apenas o item modificado/novo
+                }
+
                 saveInputGalleryToStorage();
-                upsertItem('input_gallery', inputGallery);
                 renderInputGallery();
             };
 
-            const deleteInputFromGallery = (id) => {
+            const deleteInputFromGallery = async (id) => {
+                // Deleta primeiro do Supabase
+                await deleteItem('input_gallery', id);
+
+                // Depois atualiza o estado local
                 inputGallery = inputGallery.filter(i => i.id !== id);
                 saveInputGalleryToStorage();
+                
                 if (selectedInputId === id) {
                     clearInputEditor();
                 } else {
@@ -3063,9 +3078,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             { 
                                 text: 'Delete', 
                                 className: 'action-button bg-[--accent-red] text-white border-[--accent-red-hover] hover:bg-[--accent-red-hover]', 
-                                onClick: () => {
+                                onClick: async () => {
                                     templates = templates.filter(t => t.id !== templateId);
                                     saveTemplatesToStorage();
+                                    await upsertItem('templates', templates);
                                     renderTemplatesGrid();
                                     hideModal();
                                 }
@@ -3104,16 +3120,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         { 
                             text: 'Save', 
                             className: 'action-button primary', 
-                            onClick: () => {
+                            onClick: async () => {
                                 const templateName = document.getElementById('confirm-modal-input').value.trim();
                                 if (templateName) {
                                     const newTemplate = { ...templateData, name: templateName, id: Date.now() };
                                     templates.push(newTemplate);
                                     saveTemplatesToStorage();
-                                    upsertItem('templates', newTemplate);
+                                    await upsertItem('templates', newTemplate);
                                     hideModal();
                                     setTimeout(() => {
-                                        showModal('Success', `Template "${templateName}" saved.`, [{ text: 'OK', className: 'action-button primary', onClick: hideModal }]);
+                                        showModal('Success', `Template "${templateName}" saved.`, [{ text: 'OK', className: 'action-button primary', onClick: async () => await hideModal }]);
                                     }, 300);
                                 }
                             } 
@@ -3406,11 +3422,11 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         'Confirm Deletion',
                         `Are you sure you want to delete the item "${value}"? This action cannot be undone.`,
                         [
-                            { text: 'Cancel', className: 'action-button', onClick: hideModal },
+                            { text: 'Cancel', className: 'action-button', onClick: async () => await hideModal },
                             { 
                                 text: 'Delete', 
                                 className: 'action-button bg-[--accent-red] text-white border-[--accent-red-hover] hover:bg-[--accent-red-hover]', 
-                                onClick: () => {
+                                onClick: async () => {
                                     let updatePrompts = false;
                                     switch (type) {
                                         case 'xml': xmlTags = xmlTags.filter(t => t !== value); saveXmlTagsToStorage(); break;
@@ -3434,7 +3450,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                             if (type === 'general' && p.tags) p.tags = p.tags.filter(t => t !== value);
                                         });
                                         savePromptsToStorage();
+                                        await upsertItem('prompts', prompts);
                                         if (selectedVersionId) loadVersionIntoEditor(selectedVersionId);
+                                        
                                     }
                                     
                                     renderListManager();
@@ -3668,7 +3686,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const y = (e.clientY - canvasRect.top - currentTransform.y) / currentTransform.k;
 
                 const newNode = {
-                    id: Date.now()
+                    id: crypto.randomUUID(),
                     promptId: versionId,
                     x: x - 140, // Centraliza o card no drop
                     y: y - 80,
