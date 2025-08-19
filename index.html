@@ -452,13 +452,13 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: auto; /* allow interaction with connection lines */
+            pointer-events: none; /* let underlying nodes receive events */
         }
         .connection-line {
             stroke: var(--accent-fuchsia);
             stroke-width: 2;
             fill: none;
-            pointer-events: auto; /* Permite clicar na linha */
+            pointer-events: stroke; /* allow hitting the path without blocking entire overlay */
             cursor: pointer;
         }
         .connection-line:hover {
@@ -1042,6 +1042,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const LLM_LIST_STORAGE_KEY = 'promptManagerApp_llmList';
             const INPUT_GALLERY_STORAGE_KEY = 'promptManagerApp_inputGallery';
             const NODE_FLOWS_STORAGE_KEY = 'promptManagerApp_nodeFlows';
+            const PROJECTS_STORAGE_KEY = 'promptManagerApp_projects';
             
             // --- ESTADO DA APLICAÇÃO ---
             let prompts = [];
@@ -1051,6 +1052,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             let llmList = {};
             let inputGallery = [];
             let savedFlows = [];
+            let projectNames = [];
             let selectedVersionId = null;
             let selectedInputId = null; // Para o modal Input Gallery
             let expandedPromptGroups = new Set();
@@ -1161,6 +1163,17 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             const option = document.createElement('option');
                             option.value = newProjectName;
                             datalist.appendChild(option);
+
+                            // Track in persistent project list
+                            if (!projectNames.includes(newProjectName)) {
+                                projectNames.push(newProjectName);
+                                saveProjectNamesToStorage();
+                                // Persist to Supabase global_lists
+                                updateGlobalList('projects', projectNames);
+                            }
+
+                            // Update modal list immediately
+                            renderProjectsView();
 
                             // Exibir modal estilizado
                             showModal(
@@ -1309,6 +1322,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     xmlTags = JSON.parse(localStorage.getItem(XML_TAGS_STORAGE_KEY) || '[]');
                     varLibrary = JSON.parse(localStorage.getItem(VAR_LIBRARY_STORAGE_KEY) || '[]');
                     llmList = JSON.parse(localStorage.getItem(LLM_LIST_STORAGE_KEY) || '{}');
+                    projectNames = JSON.parse(localStorage.getItem(PROJECTS_STORAGE_KEY) || '[]');
                     console.info('Loaded data from localStorage (offline mode).');
                 } catch (e) {
                     console.error('Error loading from localStorage:', e);
@@ -1352,6 +1366,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     xmlTags = listsData.find(l => l.name === 'xml_tags')?.data || [];
                     varLibrary = listsData.find(l => l.name === 'var_library')?.data || [];
                     llmList = listsData.find(l => l.name === 'llm_list')?.data || {};
+                    projectNames = listsData.find(l => l.name === 'projects')?.data || [];
 
                     console.log("Data fetched successfully!");
 
@@ -1397,6 +1412,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const saveLlmListToStorage = () => localStorage.setItem(LLM_LIST_STORAGE_KEY, JSON.stringify(llmList));
             const saveInputGalleryToStorage = () => localStorage.setItem(INPUT_GALLERY_STORAGE_KEY, JSON.stringify(inputGallery));
             const saveFlowsToStorage = () => localStorage.setItem(NODE_FLOWS_STORAGE_KEY, JSON.stringify(savedFlows));
+            const saveProjectNamesToStorage = () => localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projectNames));
 
 
             // --- FUNÇÕES DE LÓGICA ---
@@ -1687,7 +1703,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     return acc;
                 }, {});
 
-                Object.keys(groupedByProject).sort().forEach(project => {
+                const allProjectSet = new Set([...Object.keys(groupedByProject), ...projectNames]);
+                const allProjects = Array.from(allProjectSet).sort();
+
+                allProjects.forEach(project => {
                     const projectWrapper = document.createElement('div');
                     projectWrapper.className = 'mb-6';
                     
@@ -1713,8 +1732,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         </thead>
                     `;
                     const tbody = document.createElement('tbody');
-                    
-                    groupedByProject[project].sort((a,b) => a.title.localeCompare(b.title) || parseFloat(b.version) - parseFloat(a.version)).forEach(prompt => {
+                    const rows = (groupedByProject[project] || []).sort((a,b) => a.title.localeCompare(b.title) || parseFloat(b.version) - parseFloat(a.version));
+                    rows.forEach(prompt => {
                         let dependencyTitle = 'N/A';
                         if (prompt.parentId) {
                             const parentPrompt = prompts.find(p => p.id === prompt.parentId);
@@ -2654,17 +2673,21 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const updateListItem = (type, oldVal, newVal, options = {}) => {
                 if (!newVal || oldVal === newVal) return;
 
-                if (type === 'xml') {
+        if (type === 'xml') {
                     const index = xmlTags.indexOf(oldVal);
                     if (index > -1 && !xmlTags.includes(newVal)) {
                         xmlTags[index] = newVal;
-                        saveXmlTagsToStorage();
+            saveXmlTagsToStorage();
+            // Persist XML tags rename to Supabase
+            updateGlobalList('xml_tags', xmlTags);
                     }
                 } else if (type === 'var') {
                     const index = varLibrary.indexOf(oldVal);
                     if (index > -1 && !varLibrary.includes(newVal)) {
                         varLibrary[index] = newVal;
-                        saveVarLibraryToStorage();
+            saveVarLibraryToStorage();
+            // Persist Var Library rename to Supabase
+            updateGlobalList('var_library', varLibrary);
                     }
                 } else if (type === 'general') {
                     prompts.forEach(p => {
@@ -2689,6 +2712,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             llmList[category][index] = newVal;
                             prompts.forEach(p => { if (p.llm === oldVal) p.llm = newVal; });
                             saveLlmListToStorage();
+                            // Persist updated llmList to Supabase
+                            updateGlobalList('llm_list', llmList);
                             savePromptsToStorage();
                             populateLlmSelect();
                         }
@@ -3199,7 +3224,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                     await upsertItem('templates', newTemplate);
                                     hideModal();
                                     setTimeout(() => {
-                                        showModal('Success', `Template "${templateName}" saved.`, [{ text: 'OK', className: 'action-button primary', onClick: async () => await hideModal }]);
+                                        // Ensure the success modal can be closed properly
+                                        showModal('Success', `Template "${templateName}" saved.`, [
+                                            { text: 'OK', className: 'action-button primary', onClick: hideModal }
+                                        ]);
                                     }, 300);
                                 }
                             } 
@@ -3512,8 +3540,18 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 onClick: async () => {
                                     let updatePrompts = false;
                                     switch (type) {
-                                        case 'xml': xmlTags = xmlTags.filter(t => t !== value); saveXmlTagsToStorage(); break;
-                                        case 'var': varLibrary = varLibrary.filter(t => t !== value); saveVarLibraryToStorage(); break;
+                                        case 'xml':
+                                            xmlTags = xmlTags.filter(t => t !== value);
+                                            saveXmlTagsToStorage();
+                                            // Persist XML tags delete to Supabase
+                                            updateGlobalList('xml_tags', xmlTags);
+                                            break;
+                                        case 'var':
+                                            varLibrary = varLibrary.filter(t => t !== value);
+                                            saveVarLibraryToStorage();
+                                            // Persist Var Library delete to Supabase
+                                            updateGlobalList('var_library', varLibrary);
+                                            break;
                                         case 'llm-category': delete llmList[value]; saveLlmListToStorage(); populateLlmSelect(); break;
                                         case 'llm-model':
                                             if (llmList[category]) {
@@ -3551,6 +3589,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     if (modelName && llmList[category] && !llmList[category].includes(modelName)) {
                         llmList[category].push(modelName);
                         saveLlmListToStorage();
+                        // Persist addition to Supabase
+                        updateGlobalList('llm_list', llmList);
                         populateLlmSelect();
                         renderListManager();
                         input.value = '';
@@ -3558,11 +3598,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
             });
 
-            addXmlTagManagerBtn.addEventListener('click', () => {
+        addXmlTagManagerBtn.addEventListener('click', () => {
                 const tagName = addXmlTagManagerInput.value.trim();
                 if (tagName && !xmlTags.includes(tagName)) {
                     xmlTags.push(tagName);
                     saveXmlTagsToStorage();
+            // Persist XML tags add to Supabase
+            updateGlobalList('xml_tags', xmlTags);
                     addXmlTagManagerInput.value = '';
                     renderListManager();
                 }
@@ -3577,6 +3619,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     if (!varLibrary.includes(varName)) {
                         varLibrary.push(varName);
                         saveVarLibraryToStorage();
+                        // Persist Var Library add to Supabase
+                        updateGlobalList('var_library', varLibrary);
                         addVarLibraryManagerInput.value = '';
                         renderListManager();
                     }
