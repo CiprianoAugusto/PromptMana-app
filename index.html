@@ -52,7 +52,7 @@
         .editor-window { background-color: var(--card-bg-dark); border: 1px solid var(--border-dark); border-radius: 0.75rem; }
         .form-input, .llm-select { background-color: transparent; border: 0; color: var(--text-dark); }
         .form-input::placeholder { color: var(--text-muted-dark); }
-        .form-input:focus, .llm-select:focus { outline: none; ring: 0; }
+    .form-input:focus, .llm-select:focus { outline: none; box-shadow: none; }
         
         .action-button { background-color: transparent; border: 1px solid var(--border-dark); font-size: 0.875rem; padding: 6px 12px; border-radius: 0.5rem; transition: background-color 0.2s, border-color 0.2s; }
         .action-button:hover { background-color: #333333; border-color: #444444; }
@@ -912,10 +912,6 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 <div class="flex flex-col gap-3 p-3 bg-[#121212] rounded-md overflow-hidden">
                     <h3 class="font-semibold flex-shrink-0">General Tags (#)</h3>
                     <p class="text-xs text-[--text-muted-dark] flex-shrink-0">Deleting a tag here will remove it from all prompts.</p>
-                    <div class="flex gap-2 flex-shrink-0">
-                        <input id="add-general-tag-manager-input" type="text" placeholder="New #tag..." class="form-control w-full rounded-md py-1 px-2 text-sm">
-                        <button id="add-general-tag-manager-btn" class="action-button primary px-3">+</button>
-                    </div>
                     <div id="general-tags-manager-container" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
                 </div>
                 <!-- Coluna Target LLM -->
@@ -1112,17 +1108,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const projectsBtn = document.getElementById('projects-btn');
             const closeProjectsBtn = document.getElementById('close-projects-btn');
             const addProjectBtn = document.getElementById('add-project-btn');
-            const addProjectPopup = document.getElementById('add-project-popup');
-            const newProjectNameInput = document.getElementById('new-project-name-input');
-            const cancelAddProjectBtn = document.getElementById('cancel-add-project-btn');
-            const confirmAddProjectBtn = document.getElementById('confirm-add-project-btn');
-
             addProjectBtn.addEventListener('click', () => {
+                const addProjectPopup = document.getElementById('add-project-popup');
+                const newProjectNameInput = document.getElementById('new-project-name-input');
+                const cancelAddProjectBtn = document.getElementById('cancel-add-project-btn');
+                const confirmAddProjectBtn = document.getElementById('confirm-add-project-btn');
+
                 // Exibir o popup
                 addProjectPopup.classList.remove('hidden');
                 newProjectNameInput.value = '';
                 newProjectNameInput.focus();
-            });
 
                 // Cancelar adição
                 cancelAddProjectBtn.addEventListener('click', () => {
@@ -1136,29 +1131,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         const datalist = document.getElementById('project-list-aside');
                         const exists = [...datalist.options].some(option => option.value === newProjectName);
                         if (!exists) {
-                            const placeholderPrompt = {
-                                promptId: crypto.randomUUID(),
-                                title: `Welcome to ${newProjectName}`,
-                                project: newProjectName,
-                                content: `This is a placeholder for the '${newProjectName}' project.`,
-                                version: '0.1',
-                                status: 'write',
-                                llm: 'generic',
-                                date: new Date().toISOString(),
-                                parentId: null,
-                                temperature: 0.7,
-                                topP: 0.9,
-                                effort: 'Low',
-                                tags: [],
-                                comments: 'Auto-generated placeholder.'
-                            };
-                            prompts.push(placeholderPrompt);
-                            await upsertItem('prompts', placeholderPrompt);
+                            const option = document.createElement('option');
+                            option.value = newProjectName;
+                            datalist.appendChild(option);
 
-                            populateProjectDataList();
-                            renderProjectsView(); // Atualiza a lista no modal de projetos
-                            renderVersionsList(); // Atualiza a lista da sidebar
-                    
                             // Exibir modal estilizado
                             showModal(
                                 'Success',
@@ -1175,7 +1151,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
                     addProjectPopup.classList.add('hidden');
                 });
-
+            });
             const projectsListContainer = document.getElementById('projects-list-container');
 
             const templatesModal = document.getElementById('templates-modal');
@@ -1228,8 +1204,6 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const addXmlTagManagerBtn = document.getElementById('add-xml-tag-manager-btn');
             const addVarLibraryManagerInput = document.getElementById('add-var-library-manager-input');
             const addVarLibraryManagerBtn = document.getElementById('add-var-library-manager-btn');
-            const addGeneralTagManagerInput = document.getElementById('add-general-tag-manager-input');
-            const addGeneralTagManagerBtn = document.getElementById('add-general-tag-manager-btn');
             const llmManagerContainer = document.getElementById('llm-manager-container');
             const addLlmCategoryManagerInput = document.getElementById('add-llm-category-manager-input');
             const addLlmCategoryManagerBtn = document.getElementById('add-llm-category-manager-btn');
@@ -1328,45 +1302,27 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
             };
 
-            // Funções para salvar/atualizar/deletar dados individuais
+                        // Funções para salvar/atualizar/deletar dados individuais
             const upsertItem = async (table, data) => {
-                delete data.id;
-                const { data: returnedData, error } = await supabaseClient
+                const { data: rows, error } = await supabaseClient
                     .from(table)
-                    .insert(data)
+                    .upsert(data)
                     .select();
-
                 if (error) {
-                    console.error(`Error inserting to ${table}:`, error);
+                    console.error(`Error upserting to ${table}:`, error);
                     return null;
                 }
-                return returnedData && returnedData.length > 0 ? returnedData[0] : null;
-            };
-
-            const updateItem = async (table, id, data) => {
-                const { data: returnedData, error } = await supabaseClient
-                    .from(table)
-                    .update(data)
-                    .eq('id', id)
-                    .select();
-                
-                if (error) {
-                    console.error(`Error updating item in ${table}:`, error);
-                    return null;
-                }
-                return returnedData && returnedData.length > 0 ? returnedData[0] : null;
+                return rows || null;
             };
 
             const deleteItem = async (table, id) => {
                 const { error } = await supabaseClient.from(table).delete().eq('id', id);
-                if (error) {
-                    console.error(`Error deleting item from ${table}:`, error);
-                }
+                if (error) console.error(`Error deleting from ${table}:`, error);
             };
-            
+
             const deleteItemsByPromptId = async (promptId) => {
                 const { error } = await supabaseClient.from('prompts').delete().eq('promptId', promptId);
-                if (error) console.error(`Error deleting prompts by promptid:`, error);
+                if (error) console.error(`Error deleting prompts by promptId:`, error);
             };
 
             const updateGlobalList = async (listName, data) => {
@@ -1374,11 +1330,21 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (error) console.error(`Error updating global list ${listName}:`, error);
             }
 
+            const savePromptsToStorage = () => localStorage.setItem(PROMPTS_STORAGE_KEY, JSON.stringify(prompts));
+            const saveXmlTagsToStorage = () => localStorage.setItem(XML_TAGS_STORAGE_KEY, JSON.stringify(xmlTags));
+            const saveTemplatesToStorage = () => localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
+            const saveVarLibraryToStorage = () => localStorage.setItem(VAR_LIBRARY_STORAGE_KEY, JSON.stringify(varLibrary));
+            const saveLlmListToStorage = () => localStorage.setItem(LLM_LIST_STORAGE_KEY, JSON.stringify(llmList));
+            const saveInputGalleryToStorage = () => localStorage.setItem(INPUT_GALLERY_STORAGE_KEY, JSON.stringify(inputGallery));
+            const saveFlowsToStorage = () => localStorage.setItem(NODE_FLOWS_STORAGE_KEY, JSON.stringify(savedFlows));
+
+
             // --- FUNÇÕES DE LÓGICA ---
             const addCurrentXmlTag = () => {
                 const tagName = xmlTagInput.value.trim();
                 if (tagName && !xmlTags.includes(tagName)) {
                     xmlTags.push(tagName);
+                    saveXmlTagsToStorage();
                     updateGlobalList('xml_tags', xmlTags);
                     xmlTagInput.value = '';
                 }
@@ -1392,6 +1358,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
                     if (!varLibrary.includes(varName)) {
                         varLibrary.push(varName);
+                        saveVarLibraryToStorage();
                         updateGlobalList('var_library', varLibrary)
                         varLibraryInput.value = '';
                     }
@@ -1566,17 +1533,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     subList.className = `version-sub-list ${isExpanded ? 'expanded' : ''}`;
                     group.versions.forEach(p => {
                         const item = document.createElement('div');
-                        item.className = 'version-item font-mono flex items-center justify-between';
-                        item.dataset.action = 'select';
-                        item.dataset.id = p.id;
-
+                        item.className = 'version-item font-mono';
                         item.innerHTML = `
-                            <div class="flex items-center truncate">
+                            <div class="flex items-center flex-grow" data-action="select" data-id="${p.id}">
                                 <input type="checkbox" class="mr-3 h-4 w-4 rounded bg-gray-700 border-gray-600 text-fuchsia-600 focus:ring-fuchsia-500" data-id="${p.id}" data-prompt-id="${p.promptId}">
                                 <span class="truncate pr-2 text-gray-400">Version</span>
                                 <span class="font-medium text-white">${p.version}</span>
                             </div>
-                            <span class="text-xs text-gray-500">${formatDate(p.date)}</span>
+                            <span class="text-xs text-gray-500" data-action="select" data-id="${p.id}">${formatDate(p.date)}</span>
                         `;
                         if (p.id === selectedVersionId) item.classList.add('selected');
                         subList.appendChild(item);
@@ -1620,9 +1584,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const card = document.createElement('div');
                     card.className = 'gallery-card bg-[--card-bg-dark] border border-[--border-dark] rounded-lg p-3 flex flex-col text-xs text-[--text-dark]';
                     card.innerHTML = `
-                        <div class="flex justify-between items-start gap-2">
-                            <h3 class="font-bold text-base mb-2 truncate pr-2 flex-grow" style="color: var(--accent-fuchsia);">${prompt.title}</h3>
-                            <span class="flex-shrink-0 text-xs font-mono bg-[#333] text-[#ccc] rounded-full px-2 py-0.5 whitespace-nowrap">${versionCount} ${versionCount > 1 ? 'versions' : 'version'}</span>
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-base mb-2 truncate pr-2" style="color: var(--accent-fuchsia);">${prompt.title}</h3>
+                            <span class="text-xs font-mono bg-[#333] text-[#ccc] rounded-full px-2 py-0.5">${versionCount} ${versionCount > 1 ? 'versions' : 'version'}</span>
                         </div>
                         <div class="space-y-1 flex-grow">
                             <p><strong class="text-[--text-muted-dark] font-normal">Project:</strong> ${prompt.project || 'N/A'}</p>
@@ -1907,7 +1871,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             };
             
             const showCommentsViewer = (promptId) => {
-                const prompt = prompts.find(p => p.id === parseInt(promptId, 10));
+                const prompt = prompts.find(p => p.id === promptId);
                 if (prompt && prompt.comments) {
                     commentsViewerTitle.textContent = `Comments - ${prompt.title} (v${prompt.version})`;
                     commentsViewerContent.textContent = prompt.comments;
@@ -1960,22 +1924,19 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             };
             
             const loadVersionIntoEditor = (versionId) => {
-                const promptVersion = prompts.find(p => p.id === parseInt(versionId, 10));
-                if (!promptVersion) {
-                    console.error("Prompt version not found for ID:", versionId);
-                    return;
-                }
+                const promptVersion = prompts.find(p => p.id === versionId);
+                if (!promptVersion) return;
                 titleInput.value = promptVersion.title;
                 projectInput.value = promptVersion.project;
                 mainEditor.value = promptVersion.content;
                 commentsTextarea.value = promptVersion.comments || '';
                 llmSelect.value = promptVersion.llm || 'generic';
-                selectedVersionId = parseInt(versionId, 10);
+                selectedVersionId = versionId;
                 updateStatusSelectorUI(promptVersion.status);
                 updateEditorStats();
                 renderVariables();
                 updateSlidersUI(promptVersion);
-                expandedPromptGroups.add(promptVersion.promptId);
+                expandedPromptGroups.add(String(promptVersion.promptId));
             
                 if (promptVersion.parentId) {
                     renderDependencyBar(promptVersion.parentId);
@@ -1993,7 +1954,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 updateSnippetButtons();
             };
             
-            cconst saveVersion = async (isMajor = false) => {
+            const saveVersion = async (isMajor = false) => {
                 const title = titleInput.value.trim();
                 const project = projectInput.value.trim();
                 const content = mainEditor.value.trim();
@@ -2010,61 +1971,51 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     return;
                 }
 
-                const currentTags = [...tagsContainer.querySelectorAll('.prompt-tag:not(.auto-tag) span')].map(span => span.textContent);
+                const currentTags = [...tagsContainer.querySelectorAll('.prompt-tag span')].map(span => span.textContent);
 
                 let newVersionNumber;
                 let promptIdToUse;
-                let newVersionData;
 
                 if (selectedVersionId === null) {
-                    // CASO 1: Criando um prompt totalmente novo.
+                    // CASO 1: Nenhum prompt selecionado (clicou em "Add Prompt").
+                    // Sempre cria um novo prompt pai, versão 1.0.
                     promptIdToUse = crypto.randomUUID();
                     newVersionNumber = '1.0';
-                    newVersionData = {
-                        // O objeto aqui NÃO deve ter a chave 'id'
-                        promptId: promptIdToUse, // Corrigido para snake_case do Supabase
-                        title, project, content,
-                        version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId: parentId, // Corrigido para snake_case
-                        temperature, topP: topP, effort, tags: currentTags, comments // Corrigido para snake_case
-                    };
                 } else {
-                    // CASO 2: Criando uma nova versão de um prompt existente.
+                    // CASO 2: Um prompt existente está selecionado.
                     const currentPrompt = prompts.find(p => p.id === selectedVersionId);
-                    promptIdToUse = currentPrompt.promptId; // Usar o promptId existente
+                    promptIdToUse = currentPrompt.promptId;
                     const versionsOfSamePrompt = prompts.filter(p => p.promptId === promptIdToUse);
                     
                     const latestVersion = versionsOfSamePrompt.sort((a, b) => {
-                        const [majorA, minorA = 0] = String(a.version).split('.').map(Number);
-                        const [majorB, minorB = 0] = String(b.version).split('.').map(Number);
+                        const [majorA, minorA = 0] = a.version.split('.').map(Number);
+                        const [majorB, minorB = 0] = b.version.split('.').map(Number);
                         if (majorA !== majorB) return majorB - majorA;
                         return minorB - minorA;
                     })[0];
                     
-                    const [major, minor = 0] = String(latestVersion.version).split('.').map(Number);
+                    const [major, minor = 0] = latestVersion.version.split('.').map(Number);
 
                     if (isMajor) {
+                        // Se for "Save Major", incrementa o número principal e zera o secundário.
                         newVersionNumber = `${major + 1}.0`;
                     } else {
+                        // Se for "Save New" (minor), incrementa o número secundário.
                         newVersionNumber = `${major}.${(minor || 0) + 1}`;
                     }
-                    newVersionData = {
-                        // O objeto aqui também NÃO deve ter a chave 'id' para inserção
-                        promptId: promptIdToUse,
-                        title, project, content,
-                        version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId: parentId,
-                        temperature, topP: topP, effort, tags: currentTags, comments
-                    };
                 }
 
-                // AQUI ESTÁ A CORREÇÃO PRINCIPAL: Usar insertItem em vez de upsertItem
-                const savedVersion = await insertItem('prompts', newVersionData);
-                
-                if (savedVersion) {
-                    prompts.push(savedVersion);
-                    loadVersionIntoEditor(savedVersion.id);
-                } else {
-                    showModal('Error', 'Failed to save the prompt. Please check the console for errors.', [{ text: 'OK', className: 'action-button primary', onClick: hideModal }]);
-                }
+                const newVersion = {
+                    promptId: promptIdToUse, // <-- propriedade atualizada
+                    title, project, content,
+                    version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId,
+                    temperature, topP, effort, tags: currentTags, comments
+                };
+
+                const rows = await upsertItem('prompts', newVersion);
+                const saved = rows && rows[0] ? rows[0] : newVersion;
+                prompts.push(saved);
+                loadVersionIntoEditor(saved.id);
             };
             
             const forkVersion = async () => {
@@ -2077,7 +2028,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (!originalPrompt) return;
             
                 const newFork = {
-                    promptId: crypto.randomUUID(), 
+                    promptId: Date.now(), // Cria um novo grupo (ID de prompt)
                     title: `(Fork) ${originalPrompt.title}`,
                     project: originalPrompt.project,
                     content: originalPrompt.content,
@@ -2093,11 +2044,11 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     comments: `Fork of version ${originalPrompt.version}. Original comment: ${originalPrompt.comments || 'None.'}`
                 };
             
-               const savedFork = await upsertItem('prompts', newFork);
-                if (savedFork) {
-                    prompts.push(savedFork);
-                    loadVersionIntoEditor(savedFork.id);
-                }
+                const rows = await upsertItem('prompts', newFork);
+                const saved = rows && rows[0] ? rows[0] : newFork;
+                prompts.push(saved);
+                savePromptsToStorage();
+                loadVersionIntoEditor(saved.id);
             };
             
             const downloadFile = (format) => {
@@ -2393,6 +2344,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 const childPrompt = prompts.find(p => p.id === d.id);
                                 if (childPrompt) {
                                     childPrompt.parentId = firstNodeForConnection.id;
+                                    savePromptsToStorage();
                                     renderDependencyGraph({ project: graphProjectFilter.value });
                                     await upsertItem('prompts', childPrompt);
                                 }
@@ -2644,11 +2596,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const index = xmlTags.indexOf(oldVal);
                     if (index > -1 && !xmlTags.includes(newVal)) {
                         xmlTags[index] = newVal;
+                        saveXmlTagsToStorage();
                     }
                 } else if (type === 'var') {
                     const index = varLibrary.indexOf(oldVal);
                     if (index > -1 && !varLibrary.includes(newVal)) {
                         varLibrary[index] = newVal;
+                        saveVarLibraryToStorage();
                     }
                 } else if (type === 'general') {
                     prompts.forEach(p => {
@@ -2656,10 +2610,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             p.tags = p.tags.map(t => t === oldVal ? newVal : t);
                         }
                     });
+                    savePromptsToStorage();
                 } else if (type === 'llm-category') {
                     if (llmList[oldVal] && !llmList[newVal]) {
                         llmList[newVal] = llmList[oldVal];
                         delete llmList[oldVal];
+                        saveLlmListToStorage();
                         updateGlobalList('llm_list', llmList);
                         populateLlmSelect();
                     }
@@ -2670,6 +2626,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         if (index > -1 && !llmList[category].includes(newVal)) {
                             llmList[category][index] = newVal;
                             prompts.forEach(p => { if (p.llm === oldVal) p.llm = newVal; });
+                            saveLlmListToStorage();
+                            savePromptsToStorage();
                             populateLlmSelect();
                         }
                     }
@@ -2747,6 +2705,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     await upsertItem('input_gallery', itemToSave); // Salva apenas o item modificado/novo
                 }
 
+                saveInputGalleryToStorage();
                 renderInputGallery();
             };
 
@@ -2756,7 +2715,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 // Depois atualiza o estado local
                 inputGallery = inputGallery.filter(i => i.id !== id);
-
+                saveInputGalleryToStorage();
                 
                 if (selectedInputId === id) {
                     clearInputEditor();
@@ -2807,7 +2766,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     nodeEl.style.top = `${nodeData.y}px`;
                     nodeEl.dataset.nodeId = nodeData.id;
 
-                    const prompt = prompts.find(p => p.id === parseInt(nodeData.promptId, 10));
+                    const prompt = prompts.find(p => p.id === nodeData.promptId);
                     if (prompt) {
                         let dependencyTitle = 'N/A';
                          if (prompt.parentId) {
@@ -2889,12 +2848,25 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             // --- MANIPULADORES DE EVENTOS ---
             versionsHistoryList.addEventListener('click', (e) => {
                 const target = e.target;
+                const item = target.closest('.version-item');
+                const header = target.closest('.prompt-group-header');
+                const deleteGroupBtn = target.closest('[data-action="delete-group"]');
 
-                // Ação 1: Clicou no checkbox de comparação
-                if (target.matches('input[type="checkbox"]')) {
-                    e.stopPropagation(); // Impede que o clique "vaze" para o item pai
-                    const versionId = target.dataset.id;
-                    const promptId = target.dataset.promptId;
+                if (deleteGroupBtn) {
+                    e.stopPropagation();
+                    const promptId = parseInt(deleteGroupBtn.dataset.promptId, 10);
+                    showDeleteModal('group', promptId);
+                } else if (header) {
+                    const promptId = header.dataset.promptId;
+                    if (expandedPromptGroups.has(promptId)) {
+                        expandedPromptGroups.delete(promptId);
+                    } else {
+                        expandedPromptGroups.add(promptId);
+                    }
+                    renderVersionsList();
+                } else if (target.matches('input[type="checkbox"]')) {
+                    const versionId = parseInt(target.dataset.id, 10);
+                    const promptId = parseInt(target.dataset.promptId, 10);
                     
                     if (target.checked) {
                         if (activeComparisonPromptId !== null && activeComparisonPromptId !== promptId) {
@@ -2917,39 +2889,23 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
 
                     document.querySelectorAll('#versions-history-list input[type="checkbox"]').forEach(cb => {
-                        const cbVersionId = cb.dataset.id;
-                        const cbPromptId = cb.dataset.promptId;
+                        const cbVersionId = parseInt(cb.dataset.id, 10);
+                        const cbPromptId = parseInt(cb.dataset.promptId, 10);
                         cb.checked = versionsToCompare.has(cbVersionId);
-                        cb.disabled = activeComparisonPromptId !== null && cbPromptId !== activeComparisonPromptId;
+                        if (activeComparisonPromptId !== null) {
+                            cb.disabled = cbPromptId !== activeComparisonPromptId;
+                        } else {
+                            cb.disabled = false;
+                        }
                     });
 
                     compareVersionsBtn.disabled = versionsToCompare.size !== 2;
-                    return; // Finaliza a execução aqui
-                }
 
-                const item = target.closest('.version-item[data-action="select"]');
-                const header = target.closest('.prompt-group-header');
-                const deleteGroupBtn = target.closest('[data-action="delete-group"]');
-
-                // Ação 2: Clicou no botão de deletar um grupo
-                if (deleteGroupBtn) {
-                    e.stopPropagation();
-                    const promptId = deleteGroupBtn.dataset.promptId;
-                    showDeleteModal('group', promptId);
-                } 
-                // Ação 3: Clicou no cabeçalho para expandir/recolher
-                else if (header) {
-                    const promptId = header.dataset.promptId;
-                    if (expandedPromptGroups.has(promptId)) {
-                        expandedPromptGroups.delete(promptId);
-                    } else {
-                        expandedPromptGroups.add(promptId);
-                    }
-                    renderVersionsList();
-                } 
-                // Ação 4: Clicou em um item para carregar no editor
-                else if (item) {
-                    loadVersionIntoEditor(item.dataset.id);
+                } else if (item) {
+                    const actionTarget = target.closest('[data-action="select"]');
+                     if (actionTarget) {
+                         loadVersionIntoEditor(parseInt(actionTarget.dataset.id, 10));
+                     }
                 }
             });
 
@@ -3021,42 +2977,28 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     showValidationAlert('No prompt selected to save changes.');
                     return;
                 }
-
-                const title = titleInput.value.trim();
-                const project = projectInput.value.trim();
-                const llm = llmSelect.value;
-
-                if (!project || !title || llm === 'generic') {
-                    showValidationAlert('Project, Title, and Target LLM are required fields.');
-                    return;
-                }
-
                 const promptIndex = prompts.findIndex(p => p.id === selectedVersionId);
                 if (promptIndex === -1) return;
 
-                const dataToUpdate = {
-                    title: titleInput.value.trim(),
-                    project: projectInput.value.trim(),
-                    content: mainEditor.value,
-                    comments: commentsTextarea.value,
-                    llm: llmSelect.value,
-                    status: document.querySelector('.status-option.active')?.dataset.status,
-                    temperature: parseFloat(temperatureSlider.value),
-                    topP: parseFloat(topPSlider.value),
-                    effort: effortLevels[effortSlider.value],
-                    date: new Date().toISOString(),
-                    tags: [...tagsContainer.querySelectorAll('.prompt-tag:not(.auto-tag) span')].map(span => span.textContent),
-                    parentId: dependencySelect.value ? parseInt(dependencySelect.value, 10) : null
-                };
+                const promptToUpdate = { ...prompts[promptIndex] }; // Cria uma cópia para editar
 
-                const updatedPrompt = await updateItem('prompts', selectedVersionId, dataToUpdate);
+                promptToUpdate.title = titleInput.value.trim();
+                promptToUpdate.project = projectInput.value.trim();
+                promptToUpdate.content = mainEditor.value;
+                promptToUpdate.comments = commentsTextarea.value;
+                promptToUpdate.llm = llmSelect.value;
+                promptToUpdate.status = document.querySelector('.status-option.active')?.dataset.status || promptToUpdate.status;
+                promptToUpdate.temperature = parseFloat(temperatureSlider.value);
+                promptToUpdate.topP = parseFloat(topPSlider.value);
+                promptToUpdate.effort = effortLevels[effortSlider.value];
+                promptToUpdate.date = new Date().toISOString();
+                promptToUpdate.tags = [...tagsContainer.querySelectorAll('.prompt-tag span')].map(span => span.textContent);
 
-                if (updatedPrompt) {
-                    prompts[promptIndex] = updatedPrompt; // Atualiza o estado local
-                    loadVersionIntoEditor(selectedVersionId); // Recarrega para garantir consistência
-                } else {
-                    showModal('Error', 'Failed to save changes. Please check the console for errors.', [{ text: 'OK', className: 'action-button primary', onClick: hideModal }]);
-                }
+                await upsertItem('prompts', promptToUpdate); // Salva no Supabase
+
+                prompts[promptIndex] = promptToUpdate; // Atualiza o estado local
+                renderVersionsList();
+                updateSnippetButtons();
             };
 
             document.getElementById('save-changes-btn').addEventListener('click', saveChanges);
@@ -3093,10 +3035,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 if (commentBtn) {
                     e.stopPropagation(); // Impede que o clique na linha seja disparado
-                    const promptId = commentBtn.dataset.id;
+                    const promptId = parseInt(commentBtn.dataset.id, 10);
                     showCommentsViewer(promptId);
                 } else if (rowTarget) {
-                    const promptId = rowTarget.dataset.id;
+                    const promptId = parseInt(rowTarget.dataset.id, 10);
                     loadVersionIntoEditor(promptId);
                     projectsModal.classList.add('hidden');
                 }
@@ -3116,7 +3058,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (!card) return;
 
                 const actionButton = e.target.closest('[data-action]');
-                const templateId = card.dataset.id;
+                const templateId = parseInt(card.dataset.id, 10);
                 const template = templates.find(t => t.id === templateId);
                 if (!template) return;
 
@@ -3146,6 +3088,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 className: 'action-button bg-[--accent-red] text-white border-[--accent-red-hover] hover:bg-[--accent-red-hover]', 
                                 onClick: async () => {
                                     templates = templates.filter(t => t.id !== templateId);
+                                    saveTemplatesToStorage();
                                     await deleteItem('templates', templateId);
                                     renderTemplatesGrid();
                                     hideModal();
@@ -3173,7 +3116,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     temperature: parseFloat(temperatureSlider.value),
                     topP: parseFloat(topPSlider.value),
                     effort: effortLevels[effortSlider.value],
-                    parentId: dependencySelect.value || null,
+                    parentId: dependencySelect.value ? parseInt(dependencySelect.value, 10) : null,
                     tags: currentTags
                 };
 
@@ -3188,12 +3131,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             onClick: async () => {
                                 const templateName = document.getElementById('confirm-modal-input').value.trim();
                                 if (templateName) {
-                                    const newTemplate = { ...templateData, name: templateName, id: crypto.randomUUID() };
+                                    const newTemplate = { ...templateData, name: templateName, id: Date.now() };
                                     templates.push(newTemplate);
+                                    saveTemplatesToStorage();
                                     await upsertItem('templates', newTemplate);
                                     hideModal();
                                     setTimeout(() => {
-                                        showModal('Success', `Template "${templateName}" saved.`, [{ text: 'OK', className: 'action-button primary', onClick: hideModal }]);
+                                        showModal('Success', `Template "${templateName}" saved.`, [{ text: 'OK', className: 'action-button primary', onClick: async () => await hideModal }]);
                                     }, 300);
                                 }
                             } 
@@ -3206,7 +3150,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             dependencyTagContainer.addEventListener('click', (e) => {
                 const target = e.target.closest('.dependency-tag');
                 if (target) {
-                    const dependencyId = target.dataset.dependencyId;
+                    const dependencyId = parseInt(target.dataset.dependencyId, 10);
                     showDependencyViewer(dependencyId);
                 }
             });
@@ -3230,8 +3174,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             
             compareVersionsBtn.addEventListener('click', () => {
                 const [id1, id2] = Array.from(versionsToCompare);
-                let version1 = prompts.find(p => String(p.id) === String(id1));
-                let version2 = prompts.find(p => String(p.id) === String(id2));
+                let version1 = prompts.find(p => p.id === id1);
+                let version2 = prompts.find(p => p.id === id2);
 
                 if (version1 && version2) {
                     // Garante que a versão 1 seja sempre a mais antiga
@@ -3314,6 +3258,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const childPrompt = prompts.find(p => p.id === selectedLinkForDeletion.target.id);
                     if (childPrompt) {
                         childPrompt.parentId = null;
+                        savePromptsToStorage();
                         await upsertItem('prompts', childPrompt);
                         // Re-render the graph with the current filter
                         renderDependencyGraph({ project: graphProjectFilter.value });
@@ -3493,12 +3438,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 onClick: async () => {
                                     let updatePrompts = false;
                                     switch (type) {
-                                        case 'xml': xmlTags = xmlTags.filter(t => t !== value); break;
-                                        case 'var': varLibrary = varLibrary.filter(t => t !== value); break;
-                                        case 'llm-category': delete llmList[value]; populateLlmSelect(); break;
+                                        case 'xml': xmlTags = xmlTags.filter(t => t !== value); saveXmlTagsToStorage(); break;
+                                        case 'var': varLibrary = varLibrary.filter(t => t !== value); saveVarLibraryToStorage(); break;
+                                        case 'llm-category': delete llmList[value]; saveLlmListToStorage(); populateLlmSelect(); break;
                                         case 'llm-model':
                                             if (llmList[category]) {
                                                 llmList[category] = llmList[category].filter(m => m !== value);
+                                                saveLlmListToStorage();
                                                 updateGlobalList('llm_list', llmList);
                                                 populateLlmSelect();
                                                 updatePrompts = true;
@@ -3512,6 +3458,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                             if (type === 'llm-model' && p.llm === value) p.llm = 'generic';
                                             if (type === 'general' && p.tags) p.tags = p.tags.filter(t => t !== value);
                                         });
+                                        savePromptsToStorage();
                                         await upsertItem('prompts', prompts);
                                         if (selectedVersionId) loadVersionIntoEditor(selectedVersionId);
                                         
@@ -3529,6 +3476,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const modelName = input.value.trim();
                     if (modelName && llmList[category] && !llmList[category].includes(modelName)) {
                         llmList[category].push(modelName);
+                        saveLlmListToStorage();
                         populateLlmSelect();
                         renderListManager();
                         input.value = '';
@@ -3540,6 +3488,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const tagName = addXmlTagManagerInput.value.trim();
                 if (tagName && !xmlTags.includes(tagName)) {
                     xmlTags.push(tagName);
+                    saveXmlTagsToStorage();
                     addXmlTagManagerInput.value = '';
                     renderListManager();
                 }
@@ -3553,25 +3502,18 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
                     if (!varLibrary.includes(varName)) {
                         varLibrary.push(varName);
+                        saveVarLibraryToStorage();
                         addVarLibraryManagerInput.value = '';
                         renderListManager();
                     }
                 }
             });
 
-            addGeneralTagManagerBtn.addEventListener('click', () => {
-            const tagName = addGeneralTagManagerInput.value.trim();
-            if (tagName) {
-                console.warn("Standalone tags can't be added from here. Add the tag to a real prompt to register it.");
-                addGeneralTagManagerInput.value = '';
-                // Removida a criação de prompts fantasma
-            }
-        });
-
             addLlmCategoryManagerBtn.addEventListener('click', () => {
                 const categoryName = addLlmCategoryManagerInput.value.trim();
                 if (categoryName && !llmList[categoryName]) {
                     llmList[categoryName] = [];
+                    saveLlmListToStorage();
                     updateGlobalList('llm_list', llmList);
                     addLlmCategoryManagerInput.value = '';
                     renderListManager();
@@ -3605,10 +3547,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 if (deleteBtn) {
                     e.stopPropagation();
-                    const idToDelete = deleteBtn.dataset.id;
+                    const idToDelete = parseInt(deleteBtn.dataset.id, 10);
                     deleteInputFromGallery(idToDelete);
                 } else if (item) {
-                    const idToLoad = item.dataset.id;
+                    const idToLoad = parseInt(item.dataset.id, 10);
                     loadInputForEditing(idToLoad);
                 }
             });
@@ -3701,10 +3643,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
             nodeFlowProjectFilter.addEventListener('change', renderNodeFlowPrompts);
 
-            saveFlowBtn.addEventListener('click', () => {
+        saveFlowBtn.addEventListener('click', () => {
                 showModal('Save Flow', 'Enter a name for this flow:', [
                     { text: 'Cancel', className: 'action-button', onClick: hideModal },
-                    { text: 'Save', className: 'action-button primary', onClick: async () => {
+            { text: 'Save', className: 'action-button primary', onClick: async () => {
                         const flowName = confirmModalInput.value.trim();
                         if (flowName) {
                             const existing = savedFlows.findIndex(f => f.name === flowName);
@@ -3714,7 +3656,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             } else {
                                 savedFlows.push(flowData);
                             }
-                            await upsertItem('node_flows', flowData);
+                            saveFlowsToStorage();
+                await upsertItem('node_flows', flowData);
                             renderSavedFlowsList();
                             savedFlowsDropdown.value = flowName;
                             hideModal();
@@ -3745,7 +3688,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             nodeFlowCanvas.addEventListener('drop', (e) => {
                 e.preventDefault();
-                const versionId = e.dataTransfer.getData('text/plain');
+                const versionId = parseInt(e.dataTransfer.getData('text/plain'), 10);
                 const canvasRect = nodeFlowCanvas.getBoundingClientRect();
                 
                 const x = (e.clientX - canvasRect.left - currentTransform.x) / currentTransform.k;
