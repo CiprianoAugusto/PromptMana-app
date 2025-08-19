@@ -452,7 +452,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
+            pointer-events: auto; /* allow interaction with connection lines */
         }
         .connection-line {
             stroke: var(--accent-fuchsia);
@@ -499,6 +499,7 @@
                       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                 </button>
+                <span id="db-status-pill" class="ml-2 text-xs font-mono px-2 py-0.5 border border-[--border-dark] rounded-md text-[--text-muted-dark]"></span>
             </div>
         </header>
 
@@ -1001,14 +1002,38 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Helper: UUID that works offline/older browsers
+            const getUUID = () => (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function')
+                ? crypto.randomUUID()
+                : `id-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
                     // --- CONFIGURAÇÃO DO SUPABASE ---
             const SUPABASE_URL = 'https://bjegpjohwquugyvfkict.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWdwam9od3F1dWd5dmZraWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDkzMzksImV4cCI6MjA3MDQyNTMzOX0.0finKmSTim82UkBYY4Chnpa8O_WsKLCqIGrd892IFcY';
-            const { createClient } = supabase;
-            const supabaseClient = createClient(
-                'https://bjegpjohwquugyvfkict.supabase.co',
-                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqZWdwam9od3F1dWd5dmZraWN0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4NDkzMzksImV4cCI6MjA3MDQyNTMzOX0.0finKmSTim82UkBYY4Chnpa8O_WsKLCqIGrd892IFcY'
-            );
+
+            // Permitir override via querystring ou localStorage
+            const urlParams = new URLSearchParams(location.search);
+            const overrideUrl = urlParams.get('supabaseUrl') || localStorage.getItem('supabase_url');
+            const overrideKey = urlParams.get('supabaseAnonKey') || localStorage.getItem('supabase_anon_key');
+            const FINAL_SUPABASE_URL = overrideUrl || SUPABASE_URL;
+            const FINAL_SUPABASE_KEY = overrideKey || SUPABASE_ANON_KEY;
+            if (overrideUrl) localStorage.setItem('supabase_url', overrideUrl);
+            if (overrideKey) localStorage.setItem('supabase_anon_key', overrideKey);
+
+            let supabaseClient = null;
+            let dbOnline = false;
+            try {
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    const { createClient } = window.supabase;
+                    supabaseClient = createClient(FINAL_SUPABASE_URL, FINAL_SUPABASE_KEY);
+                    dbOnline = true;
+                } else {
+                    console.warn('Supabase SDK not available. Running in offline mode.');
+                }
+            } catch (e) {
+                console.warn('Supabase init failed, switching to offline mode:', e);
+                supabaseClient = null;
+                dbOnline = false;
+            }
 
             const PROMPTS_STORAGE_KEY = 'promptManagerApp_prompts';
             const XML_TAGS_STORAGE_KEY = 'promptManagerApp_xmlTags';
@@ -1051,7 +1076,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             let isDrawingConnection = false;
             let connectionStartNodeId = null;
             let tempLine = null;
-            let currentTransform = d3.zoomIdentity;
+            const hasD3 = typeof window.d3 !== 'undefined';
+            const hasDiff = typeof window.diff_match_patch === 'function';
+            let currentTransform = hasD3 ? d3.zoomIdentity : { x: 0, y: 0, k: 1, apply: ([x, y]) => [x, y] };
 
 
             // --- ELEMENTOS DO DOM ---
@@ -1266,9 +1293,41 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const saveFlowBtn = document.getElementById('save-flow-btn');
             const savedFlowsDropdown = document.getElementById('saved-flows-dropdown');
 
+            // If D3 is unavailable (offline), disable features that require it
+            if (!hasD3) {
+                if (nodeFlowBtn) { nodeFlowBtn.disabled = true; nodeFlowBtn.title = 'Disabled: D3 not loaded (offline)'; }
+                if (graphViewBtn) { graphViewBtn.disabled = true; graphViewBtn.title = 'Disabled: D3 not loaded (offline)'; }
+            }
+
             // --- FUNÇÕES DE DADOS (AGORA COM SUPABASE) ---
+            const loadFromLocalStorage = () => {
+                try {
+                    prompts = JSON.parse(localStorage.getItem(PROMPTS_STORAGE_KEY) || '[]');
+                    templates = JSON.parse(localStorage.getItem(TEMPLATES_STORAGE_KEY) || '[]');
+                    inputGallery = JSON.parse(localStorage.getItem(INPUT_GALLERY_STORAGE_KEY) || '[]');
+                    savedFlows = JSON.parse(localStorage.getItem(NODE_FLOWS_STORAGE_KEY) || '[]');
+                    xmlTags = JSON.parse(localStorage.getItem(XML_TAGS_STORAGE_KEY) || '[]');
+                    varLibrary = JSON.parse(localStorage.getItem(VAR_LIBRARY_STORAGE_KEY) || '[]');
+                    llmList = JSON.parse(localStorage.getItem(LLM_LIST_STORAGE_KEY) || '{}');
+                    console.info('Loaded data from localStorage (offline mode).');
+                } catch (e) {
+                    console.error('Error loading from localStorage:', e);
+                }
+            };
+
             const loadDataFromSupabase = async () => {
                 try {
+                    const dbStatus = document.getElementById('db-status-pill');
+                    if (dbStatus) {
+                        dbStatus.textContent = dbOnline ? 'DB: Online' : 'DB: Offline';
+                        dbStatus.style.color = dbOnline ? 'var(--accent-mint)' : 'var(--text-muted-dark)';
+                    }
+
+                    if (!supabaseClient) {
+                        loadFromLocalStorage();
+                        return;
+                    }
+
                     console.log("Fetching data from Supabase...");
 
                     const { data: promptsData, error: promptsError } = await supabaseClient.from('prompts').select('*');
@@ -1297,36 +1356,37 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     console.log("Data fetched successfully!");
 
                 } catch (error) {
-                    console.error("Error loading data from Supabase:", error);
-                    alert("Could not load data from the database. Please check the console for errors.");
+                    console.error("Error loading data from Supabase, falling back to localStorage:", error);
+                    loadFromLocalStorage();
                 }
             };
 
                         // Funções para salvar/atualizar/deletar dados individuais
             const upsertItem = async (table, data) => {
-                const { data: rows, error } = await supabaseClient
-                    .from(table)
-                    .upsert(data)
-                    .select();
-                if (error) {
-                    console.error(`Error upserting to ${table}:`, error);
-                    return null;
+                if (!supabaseClient) {
+                    // Offline: optimistically return the provided data as "saved"
+                    return Array.isArray(data) ? data : [data];
                 }
+                const { data: rows, error } = await supabaseClient.from(table).upsert(data).select();
+                if (error) { console.error(`Error upserting to ${table}:`, error); return null; }
                 return rows || null;
             };
 
             const deleteItem = async (table, id) => {
+                if (!supabaseClient) return; // offline: only mutate local state
                 const { error } = await supabaseClient.from(table).delete().eq('id', id);
                 if (error) console.error(`Error deleting from ${table}:`, error);
             };
 
             const deleteItemsByPromptId = async (promptId) => {
+                if (!supabaseClient) return;
                 const { error } = await supabaseClient.from('prompts').delete().eq('promptId', promptId);
                 if (error) console.error(`Error deleting prompts by promptId:`, error);
             };
 
             const updateGlobalList = async (listName, data) => {
-                const { error } = await supabaseClient.from('global_lists').update({ data }).eq('name', listName);
+                if (!supabaseClient) return; // offline
+                const { error } = await supabaseClient.from('global_lists').upsert({ name: listName, data });
                 if (error) console.error(`Error updating global list ${listName}:`, error);
             }
 
@@ -1433,17 +1493,17 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 });
 
                 sortedPrompts.forEach(p => {
-                    if (p.id === selectedVersionId) return;
+                    if (String(p.id) === String(selectedVersionId)) return;
                     
                     const option = document.createElement('option');
-                    option.value = p.id;
+                    option.value = String(p.id);
                     option.textContent = `${p.title} (v${p.version})`;
                     dependencySelect.appendChild(option);
                 });
             };
             
             const renderDependencyBar = (parentId) => {
-                const parentPrompt = prompts.find(p => p.id === parentId);
+                const parentPrompt = prompts.find(p => String(p.id) === String(parentId));
                 if (parentPrompt) {
                     dependencyTagContainer.innerHTML = `
                         <span class="text-sm text-[--text-muted-dark] mr-2">Dependence:</span>
@@ -1525,7 +1585,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 <span class="truncate font-sans text-xs text-[--text-muted-dark]">${group.project || 'No project'}</span>
                             </div>
                         </div>
-                        <button data-action="delete-group" data-prompt-id="${group.promptId}" class="delete-group-btn invisible group-hover:visible p-1 rounded-md hover:bg-red-900/50 text-[--text-muted-dark] hover:text-red-400">
+                        <button data-action="delete-group" data-prompt-id="${String(group.promptId)}" class="delete-group-btn invisible group-hover:visible p-1 rounded-md hover:bg-red-900/50 text-[--text-muted-dark] hover:text-red-400">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     `;
@@ -1535,14 +1595,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         const item = document.createElement('div');
                         item.className = 'version-item font-mono';
                         item.innerHTML = `
-                            <div class="flex items-center flex-grow" data-action="select" data-id="${p.id}">
-                                <input type="checkbox" class="mr-3 h-4 w-4 rounded bg-gray-700 border-gray-600 text-fuchsia-600 focus:ring-fuchsia-500" data-id="${p.id}" data-prompt-id="${p.promptId}">
+                            <div class="flex items-center flex-grow" data-action="select" data-id="${String(p.id)}">
+                                <input type="checkbox" class="mr-3 h-4 w-4 rounded bg-gray-700 border-gray-600 text-fuchsia-600 focus:ring-fuchsia-500" data-id="${String(p.id)}" data-prompt-id="${String(p.promptId)}">
                                 <span class="truncate pr-2 text-gray-400">Version</span>
                                 <span class="font-medium text-white">${p.version}</span>
                             </div>
-                            <span class="text-xs text-gray-500" data-action="select" data-id="${p.id}">${formatDate(p.date)}</span>
+                            <span class="text-xs text-gray-500" data-action="select" data-id="${String(p.id)}">${formatDate(p.date)}</span>
                         `;
-                        if (p.id === selectedVersionId) item.classList.add('selected');
+                        if (String(p.id) === String(selectedVersionId)) item.classList.add('selected');
                         subList.appendChild(item);
                     });
                     groupContainer.appendChild(header);
@@ -1871,7 +1931,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             };
             
             const showCommentsViewer = (promptId) => {
-                const prompt = prompts.find(p => p.id === promptId);
+                const prompt = prompts.find(p => String(p.id) === String(promptId));
                 if (prompt && prompt.comments) {
                     commentsViewerTitle.textContent = `Comments - ${prompt.title} (v${prompt.version})`;
                     commentsViewerContent.textContent = prompt.comments;
@@ -1884,14 +1944,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 if (itemToDelete.type === 'group') {
                     await deleteItemsByPromptId(itemToDelete.id);
-                    prompts = prompts.filter(p => p.promptId !== itemToDelete.id);
-                    if (selectedVersionId && !prompts.some(p => p.id === selectedVersionId)) {
+                    prompts = prompts.filter(p => String(p.promptId) !== String(itemToDelete.id));
+                    if (selectedVersionId && !prompts.some(p => String(p.id) === String(selectedVersionId))) {
                         clearEditorForNewPrompt();
                     }
                 } else if (itemToDelete.type === 'version') {
                     await deleteItem('prompts', itemToDelete.id);
-                    prompts = prompts.filter(p => p.id !== itemToDelete.id);
-                    if (selectedVersionId === itemToDelete.id) {
+                    prompts = prompts.filter(p => String(p.id) !== String(itemToDelete.id));
+                    if (String(selectedVersionId) === String(itemToDelete.id)) {
                         clearEditorForNewPrompt();
                     }
                 }
@@ -1961,7 +2021,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const comments = commentsTextarea.value.trim();
                 const activeStatus = document.querySelector('.status-option.active')?.dataset.status || 'write';
                 const llm = llmSelect.value;
-                const parentId = dependencySelect.value ? parseInt(dependencySelect.value, 10) : null;
+                const parentId = dependencySelect.value ? dependencySelect.value : null;
                 const temperature = parseFloat(temperatureSlider.value);
                 const topP = parseFloat(topPSlider.value);
                 const effort = effortLevels[effortSlider.value];
@@ -1979,11 +2039,11 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (selectedVersionId === null) {
                     // CASO 1: Nenhum prompt selecionado (clicou em "Add Prompt").
                     // Sempre cria um novo prompt pai, versão 1.0.
-                    promptIdToUse = crypto.randomUUID();
+                    promptIdToUse = getUUID();
                     newVersionNumber = '1.0';
                 } else {
                     // CASO 2: Um prompt existente está selecionado.
-                    const currentPrompt = prompts.find(p => p.id === selectedVersionId);
+                    const currentPrompt = prompts.find(p => String(p.id) === String(selectedVersionId));
                     promptIdToUse = currentPrompt.promptId;
                     const versionsOfSamePrompt = prompts.filter(p => p.promptId === promptIdToUse);
                     
@@ -2006,6 +2066,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
 
                 const newVersion = {
+                    id: getUUID(),
                     promptId: promptIdToUse, // <-- propriedade atualizada
                     title, project, content,
                     version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId,
@@ -2024,11 +2085,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     return;
                 }
             
-                const originalPrompt = prompts.find(p => p.id === selectedVersionId);
+                const originalPrompt = prompts.find(p => String(p.id) === String(selectedVersionId));
                 if (!originalPrompt) return;
             
                 const newFork = {
-                    promptId: Date.now(), // Cria um novo grupo (ID de prompt)
+                    id: getUUID(),
+                    promptId: getUUID(), // Cria um novo grupo (ID de prompt)
                     title: `(Fork) ${originalPrompt.title}`,
                     project: originalPrompt.project,
                     content: originalPrompt.content,
@@ -2036,7 +2098,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     status: 'write',
                     llm: originalPrompt.llm,
                     date: new Date().toISOString(),
-                    parentId: selectedVersionId, // Mantém o link com a versão original
+                    parentId: String(selectedVersionId), // Mantém o link com a versão original
                     temperature: originalPrompt.temperature,
                     topP: originalPrompt.topP,
                     effort: originalPrompt.effort,
@@ -2056,7 +2118,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     showValidationAlert('Please select a version to download.');
                     return;
                 }
-                const version = prompts.find(p => p.id === selectedVersionId);
+                const version = prompts.find(p => String(p.id) === String(selectedVersionId));
                 let content, filename, mimeType;
                 if (format === 'json') {
                     content = JSON.stringify(version, null, 2);
@@ -2695,7 +2757,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         itemToSave = inputGallery[index];
                     }
                 } else { // Criando um novo
-                    const newId = crypto.randomUUID();
+                    const newId = getUUID();
                     itemToSave = { id: newId, name, content };
                     inputGallery.push(itemToSave);
                     selectedInputId = newId;
@@ -2854,7 +2916,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 if (deleteGroupBtn) {
                     e.stopPropagation();
-                    const promptId = parseInt(deleteGroupBtn.dataset.promptId, 10);
+                    const promptId = deleteGroupBtn.dataset.promptId;
                     showDeleteModal('group', promptId);
                 } else if (header) {
                     const promptId = header.dataset.promptId;
@@ -2865,8 +2927,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
                     renderVersionsList();
                 } else if (target.matches('input[type="checkbox"]')) {
-                    const versionId = parseInt(target.dataset.id, 10);
-                    const promptId = parseInt(target.dataset.promptId, 10);
+                    const versionId = target.dataset.id;
+                    const promptId = target.dataset.promptId;
                     
                     if (target.checked) {
                         if (activeComparisonPromptId !== null && activeComparisonPromptId !== promptId) {
@@ -2889,11 +2951,11 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
 
                     document.querySelectorAll('#versions-history-list input[type="checkbox"]').forEach(cb => {
-                        const cbVersionId = parseInt(cb.dataset.id, 10);
-                        const cbPromptId = parseInt(cb.dataset.promptId, 10);
+                        const cbVersionId = cb.dataset.id;
+                        const cbPromptId = cb.dataset.promptId;
                         cb.checked = versionsToCompare.has(cbVersionId);
                         if (activeComparisonPromptId !== null) {
-                            cb.disabled = cbPromptId !== activeComparisonPromptId;
+                            cb.disabled = String(cbPromptId) !== String(activeComparisonPromptId);
                         } else {
                             cb.disabled = false;
                         }
@@ -2904,7 +2966,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 } else if (item) {
                     const actionTarget = target.closest('[data-action="select"]');
                      if (actionTarget) {
-                         loadVersionIntoEditor(parseInt(actionTarget.dataset.id, 10));
+                         loadVersionIntoEditor(actionTarget.dataset.id);
                      }
                 }
             });
@@ -3035,10 +3097,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 if (commentBtn) {
                     e.stopPropagation(); // Impede que o clique na linha seja disparado
-                    const promptId = parseInt(commentBtn.dataset.id, 10);
+                    const promptId = commentBtn.dataset.id;
                     showCommentsViewer(promptId);
                 } else if (rowTarget) {
-                    const promptId = parseInt(rowTarget.dataset.id, 10);
+                    const promptId = rowTarget.dataset.id;
                     loadVersionIntoEditor(promptId);
                     projectsModal.classList.add('hidden');
                 }
@@ -3058,8 +3120,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (!card) return;
 
                 const actionButton = e.target.closest('[data-action]');
-                const templateId = parseInt(card.dataset.id, 10);
-                const template = templates.find(t => t.id === templateId);
+                const templateId = card.dataset.id;
+                const template = templates.find(t => String(t.id) === String(templateId));
                 if (!template) return;
 
                 const action = actionButton ? actionButton.dataset.action : 'load-template';
@@ -3116,7 +3178,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     temperature: parseFloat(temperatureSlider.value),
                     topP: parseFloat(topPSlider.value),
                     effort: effortLevels[effortSlider.value],
-                    parentId: dependencySelect.value ? parseInt(dependencySelect.value, 10) : null,
+                    parentId: dependencySelect.value ? dependencySelect.value : null,
                     tags: currentTags
                 };
 
@@ -3150,7 +3212,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             dependencyTagContainer.addEventListener('click', (e) => {
                 const target = e.target.closest('.dependency-tag');
                 if (target) {
-                    const dependencyId = parseInt(target.dataset.dependencyId, 10);
+                    const dependencyId = target.dataset.dependencyId;
                     showDependencyViewer(dependencyId);
                 }
             });
@@ -3173,9 +3235,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
             
             compareVersionsBtn.addEventListener('click', () => {
+                if (!hasDiff) {
+                    showModal('Unavailable', 'Diff engine not loaded. Connect to the internet and reload to compare versions.', [
+                        { text: 'OK', className: 'action-button primary', onClick: hideModal }
+                    ]);
+                    return;
+                }
                 const [id1, id2] = Array.from(versionsToCompare);
-                let version1 = prompts.find(p => p.id === id1);
-                let version2 = prompts.find(p => p.id === id2);
+                let version1 = prompts.find(p => String(p.id) === String(id1));
+                let version2 = prompts.find(p => String(p.id) === String(id2));
 
                 if (version1 && version2) {
                     // Garante que a versão 1 seja sempre a mais antiga
@@ -3229,6 +3297,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             // --- EVENTOS DO GRÁFICO ---
             graphViewBtn.addEventListener('click', () => {
+                if (!hasD3) {
+                    showModal('Unavailable', 'Graph requires D3 which is not loaded (offline).', [
+                        { text: 'OK', className: 'action-button primary', onClick: hideModal }
+                    ]);
+                    return;
+                }
                 dependencyGraphModal.classList.remove('hidden');
                 populateGraphFilters();
                 // Pequeno delay para garantir que o container tenha as dimensões corretas antes de renderizar
@@ -3255,7 +3329,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
             deleteConnectionBtn.addEventListener('click', async () => {
                 if (selectedLinkForDeletion) {
-                    const childPrompt = prompts.find(p => p.id === selectedLinkForDeletion.target.id);
+                    const childPrompt = prompts.find(p => String(p.id) === String(selectedLinkForDeletion.target.id));
                     if (childPrompt) {
                         childPrompt.parentId = null;
                         savePromptsToStorage();
@@ -3547,10 +3621,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 if (deleteBtn) {
                     e.stopPropagation();
-                    const idToDelete = parseInt(deleteBtn.dataset.id, 10);
+                    const idToDelete = deleteBtn.dataset.id;
                     deleteInputFromGallery(idToDelete);
                 } else if (item) {
-                    const idToLoad = parseInt(item.dataset.id, 10);
+                    const idToLoad = item.dataset.id;
                     loadInputForEditing(idToLoad);
                 }
             });
@@ -3617,19 +3691,26 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
 
             // --- EVENTOS DO NODE FLOW ---
-            const zoom = d3.zoom()
+            const zoom = hasD3 ? d3.zoom()
                 .scaleExtent([0.2, 2])
                 .on("zoom", (event) => {
                     currentTransform = event.transform;
                     nodeFlowContent.style.transform = `translate(${currentTransform.x}px, ${currentTransform.y}px) scale(${currentTransform.k})`;
-                    d3.select("#connections-group").attr("transform", null); // Remove transform do grupo!
+                    if (hasD3) d3.select("#connections-group").attr("transform", null); // Remove transform do grupo!
                     renderFlowConnections();
-                });
+                }) : null;
                 
-            d3.select("#node-flow-canvas")
-                .call(zoom);
+            if (hasD3) {
+                d3.select("#node-flow-canvas").call(zoom);
+            }
 
             nodeFlowBtn.addEventListener('click', () => {
+                if (!hasD3) {
+                    showModal('Unavailable', 'Node Flow requires D3 which is not loaded (offline).', [
+                        { text: 'OK', className: 'action-button primary', onClick: hideModal }
+                    ]);
+                    return;
+                }
                 populateProjectList(nodeFlowProjectFilter);
                 renderNodeFlowPrompts();
                 renderSavedFlowsList();
@@ -3688,14 +3769,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             nodeFlowCanvas.addEventListener('drop', (e) => {
                 e.preventDefault();
-                const versionId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                const versionId = e.dataTransfer.getData('text/plain');
                 const canvasRect = nodeFlowCanvas.getBoundingClientRect();
                 
                 const x = (e.clientX - canvasRect.left - currentTransform.x) / currentTransform.k;
                 const y = (e.clientY - canvasRect.top - currentTransform.y) / currentTransform.k;
 
                 const newNode = {
-                    id: crypto.randomUUID(),
+                    id: getUUID(),
                     promptId: versionId,
                     x: x - 140, // Centraliza o card no drop
                     y: y - 80,
