@@ -33,6 +33,8 @@
             --border-dark: #2E2E2E; /* Borda mais escura */
             --text-dark: #FFFDF2; /* Creme */
             --text-muted-dark: #808080; /* Cinza de texto mais escuro */
+            --input-bg: #222222; /* Inputs/textarea fundo */
+            --panel-bg: #121212; /* Painéis internos */
             --accent-fuchsia: #D8125B;
             --accent-fuchsia-hover: #b80f4d;
             --accent-mint: #0FFCBE;
@@ -41,7 +43,69 @@
             --diff-ins-bg: #517A18;
             --diff-del-bg: #CC5E5E;
             --highlight-bg: rgba(216, 18, 91, 0.4); /* Cor de destaque para busca */
+            /* Theme-aware accents */
+            --stat-color: var(--accent-mint); /* tokens/words/chars counters */
+            --db-online-color: var(--accent-mint);
+            --db-offline-color: var(--text-muted-dark);
         }
+        /* Light theme: soft neutrals, lower contrast */
+        [data-theme="light"] {
+            --bg-dark: #F7F8FA; /* soft background */
+            --card-bg-dark: #FFFFFF; /* cards/panels */
+            --border-dark: #E5E7EB; /* light gray border */
+            --text-dark: #1F2937; /* slate-700 */
+            --text-muted-dark: #6B7280; /* gray-500 */
+            --input-bg: #F9FAFB; /* light input bg */
+            --panel-bg: #FFFFFF; /* white panels */
+            --diff-ins-bg: #DCFCE7; /* pastel green */
+            --diff-del-bg: #FEE2E2; /* pastel red */
+            /* In light mode, use a different accent for stats and DB online (not green) */
+            --stat-color: #6366F1; /* indigo-500 */
+            --db-online-color: #6366F1;
+            --db-offline-color: var(--text-muted-dark);
+        }
+
+        /* Light theme overrides for dark-leaning components */
+        [data-theme="light"] .action-button:hover { background-color: #F3F4F6; border-color: #E5E7EB; }
+        [data-theme="light"] .prompt-group-header:hover { background-color: #F3F4F6; }
+        [data-theme="light"] .filter-tag-btn { background-color: #F3F4F6; color: var(--text-muted-dark); border-color: var(--border-dark); }
+        [data-theme="light"] .filter-tag-btn:hover { background-color: #E5E7EB; color: var(--text-dark); }
+        [data-theme="light"] .xml-tag, [data-theme="light"] .dependency-tag, [data-theme="light"] .var-library-tag { background-color: #F3F4F6; color: var(--text-dark); }
+        [data-theme="light"] .nav-map-tag { background-color: #F3F4F6; }
+        [data-theme="light"] .status-selector { background-color: #F3F4F6; border-color: var(--border-dark); }
+        [data-theme="light"] .gallery-card:hover { box-shadow: 0 8px 14px -6px rgba(216, 18, 91, 0.12), 0 3px 5px -3px rgba(216, 18, 91, 0.08); }
+        /* Node Flow canvas grid on light */
+        [data-theme="light"] #node-flow-canvas {
+            background-color: #F8FAFC;
+            background-image: radial-gradient(circle, rgba(0,0,0,0.08) 1px, transparent 1px);
+            background-size: 16px 16px;
+            background-position: 0 0;
+        }
+    /* Additional light theme softening */
+    [data-theme="light"] .manager-tag span[contenteditable]:focus { background-color: #F3F4F6; }
+    [data-theme="light"] .copy-snippet-btn { background-color: #F3F4F6; color: var(--text-muted-dark); border-color: var(--border-dark); }
+    [data-theme="light"] .input-gallery-item:hover { background-color: #F3F4F6; }
+    [data-theme="light"] .version-item:hover { background-color: #F3F4F6; }
+    [data-theme="light"] .prompt-tag, [data-theme="light"] .manager-tag { background-color: #F3F4F6; color: var(--text-dark); }
+    [data-theme="light"] .form-control { background-color: var(--input-bg); border: 1px solid var(--border-dark); color: var(--text-dark); }
+    [data-theme="light"] .form-control::placeholder { color: var(--text-muted-dark); }
+    [data-theme="light"] .form-control:focus, [data-theme="light"] #search-versions-input:focus { --tw-ring-color: #E5E7EB; border-color: #D1D5DB; }
+    [data-theme="light"] input[type=range] { background: #E5E7EB; }
+    [data-theme="light"] #projects-modal tr:hover { background-color: #F3F4F6 !important; }
+    [data-theme="light"] #copy-prompt-btn:hover,
+    [data-theme="light"] #find-btn:hover,
+    [data-theme="light"] #toggle-comments-btn:hover,
+    [data-theme="light"] #close-gallery-btn:hover,
+    [data-theme="light"] #close-templates-btn:hover,
+    [data-theme="light"] #close-projects-btn:hover,
+    [data-theme="light"] #close-dependency-viewer-btn:hover,
+    [data-theme="light"] #close-comments-viewer-btn:hover,
+    [data-theme="light"] #close-diff-modal-btn:hover,
+    [data-theme="light"] #close-dependency-graph-btn:hover,
+    [data-theme="light"] #close-input-gallery-btn:hover,
+    [data-theme="light"] #close-node-flow-btn:hover { background-color: #F3F4F6 !important; color: var(--text-dark); }
+    /* Tailwind class badge override in light mode */
+    [data-theme="light"] .bg-\[\#333\] { background-color: #F3F4F6 !important; color: var(--text-muted-dark) !important; }
         
         html, body { height: 100%; overflow: hidden; }
         body { background-color: var(--bg-dark); color: var(--text-dark); font-family: 'Inter', sans-serif; }
@@ -50,12 +114,14 @@
         .action-panel { width: 320px; min-width: 320px; background-color: var(--card-bg-dark); border-left: 1px solid var(--border-dark); }
         .main-editor-area { background-color: var(--bg-dark); }
         .editor-window { background-color: var(--card-bg-dark); border: 1px solid var(--border-dark); border-radius: 0.75rem; }
-        .form-input, .llm-select { background-color: transparent; border: 0; color: var(--text-dark); }
+    .form-input, .llm-select { background-color: transparent; border: 0; color: var(--text-dark); }
         .form-input::placeholder { color: var(--text-muted-dark); }
     .form-input:focus, .llm-select:focus { outline: none; box-shadow: none; }
         
         .action-button { background-color: transparent; border: 1px solid var(--border-dark); font-size: 0.875rem; padding: 6px 12px; border-radius: 0.5rem; transition: background-color 0.2s, border-color 0.2s; }
-        .action-button:hover { background-color: #333333; border-color: #444444; }
+    .action-button:hover { background-color: #333333; border-color: #444444; }
+    /* Panels that previously used hardcoded bg should follow theme */
+    .diff-view { background-color: var(--panel-bg); }
         .action-button:disabled { cursor: not-allowed; opacity: 0.5; }
         .action-button.primary { background-color: var(--accent-fuchsia); border-color: var(--accent-fuchsia-hover); color: white; }
         .action-button.primary:hover { background-color: var(--accent-fuchsia-hover); }
@@ -104,7 +170,11 @@
             border-color: var(--accent-fuchsia-hover);
         }
 
-        #editor-stats { color: var(--accent-mint); }
+    #editor-stats { color: var(--stat-color); }
+    #read-mode-stats { color: var(--stat-color); }
+    /* DB status pill color by state */
+    #db-status-pill.online { color: var(--db-online-color); }
+    #db-status-pill.offline { color: var(--db-offline-color); }
 
         .modal-overlay { transition: opacity 0.3s ease; }
         .modal-overlay.hidden { opacity: 0; pointer-events: none; }
@@ -152,6 +222,10 @@
         .gallery-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 15px -3px rgba(216, 18, 91, 0.1), 0 4px 6px -2px rgba(216, 18, 91, 0.05);
+        }
+        /* Standard fixed-width card to match Node Flow node sizing */
+        .standard-card {
+            width: 280px; /* Match .flow-node width */
         }
         .read-mode-blur {
             filter: blur(5px);
@@ -279,6 +353,10 @@
             background-color: #2a2a2a;
             color: var(--text-muted-dark);
         }
+        [data-theme="light"] .prompt-tag.auto-tag {
+            background-color: #E5E7EB;
+            color: var(--text-muted-dark);
+        }
         /* Dropdown customizado */
         .custom-dropdown {
             position: absolute;
@@ -300,6 +378,10 @@
         .custom-dropdown-item:hover {
             background-color: var(--accent-fuchsia);
             color: white;
+        }
+        [data-theme="light"] .custom-dropdown-item:hover {
+            background-color: #F3F4F6;
+            color: var(--text-dark);
         }
         /* Estilos do Mapa de Navegação */
         #navigation-map {
@@ -424,6 +506,10 @@
         .flow-node:hover {
             border-color: var(--accent-fuchsia);
         }
+        .flow-node.selected {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 0 1px var(--accent-red) inset, 0 4px 6px rgba(0,0,0,0.3);
+        }
         .flow-node .connector {
             position: absolute;
             width: 14px;
@@ -470,7 +556,7 @@
 <body>
 
     <div id="root" class="flex flex-col h-screen">
-        <header id="main-header" class="bg-[--card-bg-dark] border-b border-[--border-dark] px-6 py-2 flex items-center justify-between relative z-20">
+    <header id="main-header" class="bg-[--card-bg-dark] border-b border-[--border-dark] px-6 py-2 flex items-center justify-between relative z-20">
             <div class="flex items-center gap-3">
                 <!-- LOGO SVG -->
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(15deg);">
@@ -487,8 +573,9 @@
                 </svg>
                 <h1 class="text-xl font-bold font-mono" style="color: var(--accent-fuchsia);">PromptMana</h1>
             </div>
-            <div class="flex items-center gap-2">
-                <button id="read-mode-btn" title="Read Mode" class="p-2 rounded-full hover:bg-[#333]">
+            <!-- Centered Read Mode button -->
+            <div class="absolute inset-x-0 flex justify-center pointer-events-none">
+                <button id="read-mode-btn" title="Read Mode" class="p-2 rounded-full hover:bg-[#333] pointer-events-auto">
                     <!-- Olho Fechado (Padrão) -->
                     <svg id="read-mode-icon-closed" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.243 4.243a3 3 0 01-4.243-4.243" />
@@ -499,7 +586,19 @@
                       <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                 </button>
-                <span id="db-status-pill" class="ml-2 text-xs font-mono px-2 py-0.5 border border-[--border-dark] rounded-md text-[--text-muted-dark]"></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="theme-toggle" class="action-button p-1.5" aria-label="Toggle theme">
+                    <!-- Sun (light mode indicator) -->
+                    <svg id="icon-sun" class="w-4 h-4 hidden" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 18a6 6 0 100-12 6 6 0 000 12z"/>
+                        <path d="M12 2a1 1 0 011 1v2a1 1 0 11-2 0V3a1 1 0 011-1zm0 17a1 1 0 011 1v2a1 1 0 11-2 0v-2a1 1 0 011-1zm9-9a1 1 0 01-1 1h-2a1 1 0 110-2h2a1 1 0 011 1zM6 12a1 1 0 01-1 1H3a1 1 0 110-2h2a1 1 0 011 1zm12.364 6.364a1 1 0 00-1.414 0l-1.414 1.414a1 1 0 001.414 1.414l1.414-1.414a1 1 0 000-1.414zM7.05 5.636a1 1 0 00-1.414 0L4.222 7.05a1 1 0 001.414 1.414L7.05 7.05a1 1 0 000-1.414zm11.314 0a1 1 0 010 1.414L16.95 9.464a1 1 0 11-1.414-1.414l1.414-1.414a1 1 0 011.414 0zM7.05 16.95a1 1 0 010 1.414L5.636 19.778a1 1 0 11-1.414-1.414L5.636 16.95a1 1 0 011.414 0z"/>
+                    </svg>
+                    <!-- Moon (dark mode indicator) -->
+                    <svg id="icon-moon" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+                    </svg>
+                </button>
             </div>
         </header>
 
@@ -638,7 +737,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     <!-- Seção de Comentários -->
                     <div id="comments-section" class="p-4 border-t border-[--border-dark] hidden">
                         <h3 class="text-sm font-bold text-[--text-muted-dark] mb-2">Version Comments</h3>
-                        <textarea id="comments-textarea" placeholder="Note the purpose of the version, tests, results..." class="form-input font-sans w-full h-24 p-2 text-sm leading-relaxed resize-none bg-[#222222] rounded-md"></textarea>
+                        <textarea id="comments-textarea" placeholder="Note the purpose of the version, tests, results..." class="form-input font-sans w-full h-24 p-2 text-sm leading-relaxed resize-none rounded-md" style="background-color: var(--input-bg);"></textarea>
                     </div>
                      <div class="flex items-center justify-between p-2 border-t border-[--border-dark]">
                          <div id="status-selector-container" class="flex items-center justify-center">
@@ -662,7 +761,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         <button id="add-minor-version-btn" class="action-button w-full text-left font-medium">Save New Version</button>
                         <button id="save-changes-btn" class="action-button w-full text-left font-medium">Save Changes</button>
                         <button id="save-as-template-btn" class="action-button w-full text-left font-medium">Save as Template</button>
-                        <button id="fork-version-btn" class="action-button w-full text-left font-medium">Fork Version</button>
+                        <button id="fork-version-btn" class="action-button primary w-full text-left font-medium">Fork Version</button>
                         <button id="delete-version-btn" class="action-button w-full text-left font-medium text-red-500 hover:bg-red-900/20 hover:border-red-800">Delete Version</button>
                         <hr class="border-[--border-dark] my-1">
                          <div>
@@ -726,6 +825,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 </div>
             </aside>
         </div>
+        <!-- DB status moved to bottom-left corner -->
+        <div class="fixed bottom-3 left-4 z-30">
+            <span id="db-status-pill" class="text-xs font-mono px-2 py-0.5 border border-[--border-dark] rounded-md text-[--text-muted-dark]"></span>
+        </div>
     </div>
 
     <!-- Modal de Confirmação -->
@@ -744,14 +847,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
     
     <!-- Modal da Galeria -->
     <div id="gallery-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-6xl h-full max-h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
                 <h2 class="text-xl font-bold">Gallery</h2>
                 <button id="close-gallery-btn" class="p-2 rounded-full hover:bg-[#333]">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div id="gallery-grid" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
+            <div id="gallery-grid" class="p-6 grid gap-3 overflow-y-auto justify-start" style="grid-template-columns: repeat(auto-fill, minmax(280px, 280px));">
                 <!-- Cards da galeria serão inseridos aqui -->
             </div>
         </div>
@@ -759,7 +862,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal de Projetos -->
     <div id="projects-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-6xl h-full max-h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
                 <h2 class="text-xl font-bold">Projects</h2>
                 <div class="flex items-center gap-4">
@@ -790,14 +893,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal de Templates -->
     <div id="templates-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-6xl h-full max-h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
                 <h2 class="text-xl font-bold">Templates</h2>
                 <button id="close-templates-btn" class="p-2 rounded-full hover:bg-[#333]">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div id="templates-grid-container" class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto">
+            <div id="templates-grid-container" class="p-6 grid gap-3 overflow-y-auto justify-start" style="grid-template-columns: repeat(auto-fill, minmax(280px, 280px));">
                 <!-- Cards de templates serão inseridos aqui -->
             </div>
         </div>
@@ -805,7 +908,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal Visualizador de Dependência -->
     <div id="dependency-viewer-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-4xl h-full max-h-[80vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
                 <h2 id="dependency-viewer-title" class="text-xl font-bold">Dependency Viewer</h2>
                 <button id="close-dependency-viewer-btn" class="p-2 rounded-full hover:bg-[#333]">
@@ -820,7 +923,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal Visualizador de Comentários -->
     <div id="comments-viewer-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-2xl rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
                 <h2 id="comments-viewer-title" class="text-xl font-bold">Comments</h2>
                 <button id="close-comments-viewer-btn" class="p-2 rounded-full hover:bg-[#333]">
@@ -835,28 +938,51 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal Read Mode -->
     <div id="read-mode-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center hidden z-50 p-8 cursor-pointer">
-        <pre id="read-mode-content" class="w-full max-w-4xl h-full max-h-[90vh] text-[--text-dark] p-8 overflow-y-auto font-mono text-lg leading-relaxed whitespace-pre-wrap cursor-default"></pre>
+        <div class="w-full max-w-4xl h-full max-h-[90vh] text-[--text-dark] p-8 overflow-hidden flex flex-col cursor-default">
+            <div class="mb-3 flex items-start justify-between gap-4">
+                <div>
+                    <h2 id="read-mode-title" class="text-xl font-bold"></h2>
+                    <div id="read-mode-meta" class="text-sm text-[--text-muted-dark] mt-1"></div>
+                    <div id="read-mode-comments" class="text-sm text-[--text-muted-dark] mt-2 whitespace-pre-wrap"></div>
+                </div>
+                <div id="read-mode-stats" class="text-xs font-mono mt-1 text-right"></div>
+            </div>
+            <hr class="border-[--border-dark] my-2">
+            <pre id="read-mode-content" class="flex-grow overflow-y-auto font-mono text-lg leading-relaxed whitespace-pre-wrap"></pre>
+        </div>
     </div>
 
     <!-- Modal Comparador de Versões -->
     <div id="diff-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-6xl h-full max-h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
                 <h2 id="diff-modal-title" class="text-xl font-bold">Comparing Versions</h2>
                 <button id="close-diff-modal-btn" class="p-2 rounded-full hover:bg-[#333]">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="flex-grow grid grid-cols-2 gap-4 p-4 overflow-y-auto">
-                <div class="diff-view bg-[#121212] p-4 rounded-md font-mono text-sm whitespace-pre-wrap"><h3 id="diff-title-a" class="font-bold text-lg mb-2"></h3><hr class="border-[--border-dark] my-2"><div id="diff-panel-a"></div></div>
-                <div class="diff-view bg-[#121212] p-4 rounded-md font-mono text-sm whitespace-pre-wrap"><h3 id="diff-title-b" class="font-bold text-lg mb-2"></h3><hr class="border-[--border-dark] my-2"><div id="diff-panel-b"></div></div>
+            <div class="flex-grow grid grid-cols-2 gap-4 p-4 overflow-hidden w-full">
+                <div class="diff-view p-4 rounded-md font-mono text-sm whitespace-pre-wrap h-full flex flex-col">
+                    <h3 id="diff-title-a" class="font-bold text-lg mb-2"></h3>
+                    <div id="diff-meta-a" class="text-xs font-sans text-[--text-muted-dark] mb-2"></div>
+                    <div id="diff-comments-a" class="text-xs font-sans text-[--text-muted-dark] mb-2 whitespace-pre-wrap"></div>
+                    <hr class="border-[--border-dark] my-2">
+                    <div id="diff-panel-a" class="flex-grow overflow-auto"></div>
+                </div>
+                <div class="diff-view p-4 rounded-md font-mono text-sm whitespace-pre-wrap h-full flex flex-col">
+                    <h3 id="diff-title-b" class="font-bold text-lg mb-2"></h3>
+                    <div id="diff-meta-b" class="text-xs font-sans text-[--text-muted-dark] mb-2"></div>
+                    <div id="diff-comments-b" class="text-xs font-sans text-[--text-muted-dark] mb-2 whitespace-pre-wrap"></div>
+                    <hr class="border-[--border-dark] my-2">
+                    <div id="diff-panel-b" class="flex-grow overflow-auto"></div>
+                </div>
             </div>
         </div>
     </div>
     
     <!-- Modal Gráfico de Dependências -->
     <div id="dependency-graph-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-6xl h-full max-h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
                 <h2 class="text-xl font-bold">Graph View</h2>
                 <button id="close-dependency-graph-btn" class="p-2 rounded-full hover:bg-[#333]">
@@ -883,16 +1009,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal Gerenciador de Listas -->
     <div id="list-manager-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-6xl h-full max-h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
                 <h2 class="text-xl font-bold">List Manager</h2>
                 <button id="close-list-manager-btn" class="p-2 rounded-full hover:bg-[#333]">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 overflow-hidden">
+            <div class="flex-grow grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 overflow-hidden w-full">
                 <!-- Coluna XML Tags -->
-                <div class="flex flex-col gap-3 p-3 bg-[#121212] rounded-md overflow-hidden">
+                <div class="flex flex-col gap-3 p-3 rounded-md overflow-hidden" style="background-color: var(--panel-bg);">
                     <h3 class="font-semibold flex-shrink-0">XML Tags</h3>
                     <div class="flex gap-2 flex-shrink-0">
                         <input id="add-xml-tag-manager-input" type="text" placeholder="New XML tag..." class="form-control w-full rounded-md py-1 px-2 text-sm">
@@ -901,7 +1027,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     <div id="xml-tags-manager-container" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
                 </div>
                 <!-- Coluna Var Library -->
-                <div class="flex flex-col gap-3 p-3 bg-[#121212] rounded-md overflow-hidden">
+                <div class="flex flex-col gap-3 p-3 rounded-md overflow-hidden" style="background-color: var(--panel-bg);">
                     <h3 class="font-semibold flex-shrink-0">Variables (Var Library)</h3>
                     <div class="flex gap-2 flex-shrink-0">
                         <input id="add-var-library-manager-input" type="text" placeholder="New variable..." class="form-control w-full rounded-md py-1 px-2 text-sm">
@@ -910,13 +1036,17 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     <div id="var-library-manager-container" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
                 </div>
                 <!-- Coluna Tags Gerais -->
-                <div class="flex flex-col gap-3 p-3 bg-[#121212] rounded-md overflow-hidden">
+                <div class="flex flex-col gap-3 p-3 rounded-md overflow-hidden" style="background-color: var(--panel-bg);">
                     <h3 class="font-semibold flex-shrink-0">General Tags (#)</h3>
                     <p class="text-xs text-[--text-muted-dark] flex-shrink-0">Deleting a tag here will remove it from all prompts.</p>
+                    <div class="flex gap-2 flex-shrink-0">
+                        <input id="add-general-tag-manager-input" type="text" placeholder="New general tag..." class="form-control w-full rounded-md py-1 px-2 text-sm">
+                        <button id="add-general-tag-manager-btn" class="action-button primary px-3">+</button>
+                    </div>
                     <div id="general-tags-manager-container" class="flex-grow overflow-y-auto space-y-2 pr-2"></div>
                 </div>
                 <!-- Coluna Target LLM -->
-                <div class="flex flex-col gap-3 p-3 bg-[#121212] rounded-md overflow-hidden">
+                <div class="flex flex-col gap-3 p-3 rounded-md overflow-hidden" style="background-color: var(--panel-bg);">
                     <div class="flex-shrink-0">
                         <h3 class="font-semibold">Target LLM</h3>
                         <div class="flex gap-2 mt-3">
@@ -932,7 +1062,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal Input Gallery -->
     <div id="input-gallery-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-6xl h-full max-h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center flex-shrink-0">
                 <h2 class="text-xl font-bold">Input Gallery</h2>
                 <div class="flex items-center gap-4">
@@ -943,16 +1073,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 </div>
             </div>
             <div class="flex-grow flex overflow-hidden">
-                <aside id="input-gallery-list-container" class="w-1/3 p-4 border-r border-[--border-dark] flex flex-col">
+                <aside id="input-gallery-list-container" class="sidebar p-4 border-r border-[--border-dark] flex flex-col">
                     <button id="add-new-input-btn" class="action-button w-full mb-4">New Input</button>
                     <div id="input-gallery-list" class="flex-grow overflow-y-auto pr-2 space-y-2">
                         <!-- Lista de inputs será inserida aqui -->
                     </div>
                 </aside>
-                <main class="w-2/3 p-4 flex flex-col">
+                <main class="flex-grow p-4 flex flex-col">
                     <input type="hidden" id="input-gallery-id">
-                    <input id="input-gallery-name" placeholder="Input name..." class="form-input font-sans w-full p-2 text-lg font-medium mb-4 bg-[#222222] rounded-md">
-                    <textarea id="input-gallery-editor" placeholder="Input content..." class="form-input font-mono w-full h-full p-4 text-base leading-relaxed resize-none bg-[#222222] rounded-md flex-grow"></textarea>
+                    <input id="input-gallery-name" placeholder="Input name..." class="form-input font-sans w-full p-2 text-lg font-medium mb-4 rounded-md" style="background-color: var(--input-bg);">
+                    <textarea id="input-gallery-editor" placeholder="Input content..." class="form-input font-mono w-full h-full p-4 text-base leading-relaxed resize-none rounded-md flex-grow" style="background-color: var(--input-bg);"></textarea>
                 </main>
             </div>
         </div>
@@ -960,7 +1090,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal Node Flow -->
     <div id="node-flow-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-        <div class="bg-[--card-bg-dark] w-full max-w-7xl h-full max-h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+        <div class="bg-[--card-bg-dark] w-[80vw] h-[80vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
             <div class="p-4 border-b border-[--border-dark] flex justify-between items-center flex-shrink-0">
                 <div class="flex items-center gap-4">
                     <h2 class="text-xl font-bold">Node Flow</h2>
@@ -969,6 +1099,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     </select>
                 </div>
                 <div class="flex items-center gap-4">
+                    <button id="delete-flow-btn" class="action-button text-sm text-red-500 hover:bg-red-900/20 hover:border-red-800" disabled>Delete Flow</button>
                     <button id="save-flow-btn" class="action-button primary">Save Flow</button>
                     <button id="close-node-flow-btn" class="p-2 rounded-full hover:bg-[#333]">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -976,7 +1107,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 </div>
             </div>
             <div class="flex-grow flex overflow-hidden">
-                <aside id="node-flow-sidebar" class="w-1/4 p-4 border-r border-[--border-dark] flex flex-col">
+                <aside id="node-flow-sidebar" class="sidebar p-4 border-r border-[--border-dark] flex flex-col">
                      <div class="mb-3 flex-shrink-0">
                         <label for="node-flow-project-filter" class="text-xs font-medium text-[--text-muted-dark]">Filter by Project:</label>
                         <select id="node-flow-project-filter" class="form-control w-full mt-1 rounded-md py-1.5 px-3 text-sm focus:ring-2">
@@ -987,7 +1118,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         <!-- Lista de prompts arrastáveis será inserida aqui -->
                     </div>
                 </aside>
-                <main id="node-flow-canvas" class="w-3/4 flex-grow relative">
+                <main id="node-flow-canvas" class="flex-grow relative">
                     <div id="node-flow-content">
                         <!-- Nós do fluxo serão inseridos aqui -->
                     </div>
@@ -1081,6 +1212,40 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const hasD3 = typeof window.d3 !== 'undefined';
             const hasDiff = typeof window.diff_match_patch === 'function';
             let currentTransform = hasD3 ? d3.zoomIdentity : { x: 0, y: 0, k: 1, apply: ([x, y]) => [x, y] };
+
+            // --- THEME SETUP ---
+            const rootEl = document.documentElement;
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const iconSun = document.getElementById('icon-sun');
+            const iconMoon = document.getElementById('icon-moon');
+            const savedTheme = localStorage.getItem('pm_theme') || 'dark';
+            const applyTheme = (theme) => {
+                if (theme === 'light') {
+                    rootEl.setAttribute('data-theme', 'light');
+                    // Show sun icon for light, hide moon
+                    if (iconSun) iconSun.classList.remove('hidden');
+                    if (iconMoon) iconMoon.classList.add('hidden');
+                    themeToggleBtn.setAttribute('aria-label', 'Switch to dark mode');
+                } else {
+                    rootEl.removeAttribute('data-theme');
+                    // Show moon icon for dark, hide sun
+                    if (iconSun) iconSun.classList.add('hidden');
+                    if (iconMoon) iconMoon.classList.remove('hidden');
+                    themeToggleBtn.setAttribute('aria-label', 'Switch to light mode');
+                }
+                // Update DB status pill colors on theme change
+                const dbStatus = document.getElementById('db-status-pill');
+                if (dbStatus) {
+                    dbStatus.classList.remove('online', 'offline');
+                    dbStatus.classList.add(dbOnline ? 'online' : 'offline');
+                }
+            };
+            applyTheme(savedTheme);
+            themeToggleBtn.addEventListener('click', () => {
+                const next = rootEl.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                localStorage.setItem('pm_theme', next);
+                applyTheme(next);
+            });
 
 
             // --- ELEMENTOS DO DOM ---
@@ -1240,6 +1405,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const xmlTagsManagerContainer = document.getElementById('xml-tags-manager-container');
             const varLibraryManagerContainer = document.getElementById('var-library-manager-container');
             const generalTagsManagerContainer = document.getElementById('general-tags-manager-container');
+            const addGeneralTagManagerInput = document.getElementById('add-general-tag-manager-input');
+            const addGeneralTagManagerBtn = document.getElementById('add-general-tag-manager-btn');
             const addXmlTagManagerInput = document.getElementById('add-xml-tag-manager-input');
             const addXmlTagManagerBtn = document.getElementById('add-xml-tag-manager-btn');
             const addVarLibraryManagerInput = document.getElementById('add-var-library-manager-input');
@@ -1305,6 +1472,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const nodeFlowProjectFilter = document.getElementById('node-flow-project-filter');
             const saveFlowBtn = document.getElementById('save-flow-btn');
             const savedFlowsDropdown = document.getElementById('saved-flows-dropdown');
+            const deleteFlowBtn = document.getElementById('delete-flow-btn');
 
             // If D3 is unavailable (offline), disable features that require it
             if (!hasD3) {
@@ -1334,7 +1502,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const dbStatus = document.getElementById('db-status-pill');
                     if (dbStatus) {
                         dbStatus.textContent = dbOnline ? 'DB: Online' : 'DB: Offline';
-                        dbStatus.style.color = dbOnline ? 'var(--accent-mint)' : 'var(--text-muted-dark)';
+                        dbStatus.classList.remove('online', 'offline');
+                        dbStatus.classList.add(dbOnline ? 'online' : 'offline');
                     }
 
                     if (!supabaseClient) {
@@ -1391,6 +1560,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (!supabaseClient) return; // offline: only mutate local state
                 const { error } = await supabaseClient.from(table).delete().eq('id', id);
                 if (error) console.error(`Error deleting from ${table}:`, error);
+            };
+
+            // Specific helper to delete a node_flow by its unique name
+            const deleteNodeFlowByName = async (name) => {
+                if (!supabaseClient) return; // offline: handled by local state update
+                const { error } = await supabaseClient.from('node_flows').delete().eq('name', name);
+                if (error) console.error('Error deleting from node_flows by name:', error);
             };
 
             const deleteItemsByPromptId = async (promptId) => {
@@ -1658,7 +1834,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
 
                     const card = document.createElement('div');
-                    card.className = 'gallery-card bg-[--card-bg-dark] border border-[--border-dark] rounded-lg p-3 flex flex-col text-xs text-[--text-dark]';
+                    card.className = 'gallery-card standard-card bg-[--card-bg-dark] border border-[--border-dark] rounded-md p-3 flex flex-col text-xs text-[--text-dark]';
                     card.innerHTML = `
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-base mb-2 truncate pr-2" style="color: var(--accent-fuchsia);">${prompt.title}</h3>
@@ -1793,7 +1969,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
 
                     const card = document.createElement('div');
-                    card.className = 'gallery-card bg-[--card-bg-dark] border border-[--border-dark] rounded-lg p-3 flex flex-col text-xs text-[--text-dark]';
+                    card.className = 'gallery-card standard-card bg-[--card-bg-dark] border border-[--border-dark] rounded-md p-3 flex flex-col text-xs text-[--text-dark]';
                     card.dataset.id = template.id;
 
                     card.innerHTML = `
@@ -2155,7 +2331,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 URL.revokeObjectURL(a.href);
             };
 
-            const toggleReadMode = () => {
+        const toggleReadMode = () => {
                 const isHidden = readModeModal.classList.contains('hidden');
                 if (isHidden) {
                     const currentContent = mainEditor.value;
@@ -2166,7 +2342,23 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         processedContent = processedContent.replace(new RegExp(`\\{\\{${varName}\\}\\}`, 'g'), varValue);
                     });
 
-                    readModeContent.textContent = processedContent;
+            // Header and metadata
+            const currentTitle = titleInput.value || '';
+            const currentProject = projectInput.value || '';
+            const currentLLM = llmSelect.value || '';
+            const currentComments = commentsTextarea.value || '';
+
+            // Stats
+            const charCount = processedContent.length;
+            const wordCount = processedContent.trim().split(/\s+/).filter(Boolean).length;
+            const tokenCount = Math.ceil(charCount / 4);
+
+            document.getElementById('read-mode-title').textContent = currentTitle || '(Untitled)';
+            document.getElementById('read-mode-meta').textContent = `Project: ${currentProject || 'N/A'} · LLM: ${currentLLM || 'N/A'}`;
+                    document.getElementById('read-mode-stats').textContent = `${tokenCount} tokens / ${wordCount} words / ${charCount} characters`;
+            document.getElementById('read-mode-comments').textContent = currentComments ? `Comments: ${currentComments}` : '';
+
+            readModeContent.textContent = processedContent;
                     readModeModal.classList.remove('hidden');
                     mainContent.classList.add('read-mode-blur');
                     mainHeader.style.zIndex = 60; // Traz o header para frente
@@ -2178,6 +2370,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     mainHeader.style.zIndex = 20; // Retorna z-index ao normal
                     readModeIconClosed.classList.remove('hidden');
                     readModeIconOpen.classList.add('hidden');
+            document.getElementById('read-mode-title').textContent = '';
+            document.getElementById('read-mode-meta').textContent = '';
+            document.getElementById('read-mode-stats').textContent = '';
+            document.getElementById('read-mode-comments').textContent = '';
                 }
             };
 
@@ -2634,7 +2830,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 xmlTags.sort().forEach(tag => xmlTagsManagerContainer.appendChild(createManagerItemEl(tag, 'xml')));
                 varLibrary.sort().forEach(tag => varLibraryManagerContainer.appendChild(createManagerItemEl(tag, 'var')));
-                getAllUniqueTags().forEach(tag => generalTagsManagerContainer.appendChild(createManagerItemEl(tag, 'general')));
+                // Combine used tags with library-only general tags so newly added appear immediately
+                const GENERAL_TAGS_LIB_KEY = 'promptManagerApp_generalTagsLib';
+                let generalTagsLib = [];
+                try { generalTagsLib = JSON.parse(localStorage.getItem(GENERAL_TAGS_LIB_KEY) || '[]'); } catch {}
+                const combinedGeneral = Array.from(new Set([...
+                    getAllUniqueTags(),
+                    ...generalTagsLib
+                ])).sort();
+                combinedGeneral.forEach(tag => generalTagsManagerContainer.appendChild(createManagerItemEl(tag, 'general')));
 
                 Object.keys(llmList).sort().forEach(category => {
                     const categoryContainer = document.createElement('div');
@@ -2929,6 +3133,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     flowConnections = flow.connections;
                     renderFlowNodes();
                     renderFlowConnections();
+                    // Update delete button based on content loaded
+                    if (typeof refreshDeleteFlowState === 'function') refreshDeleteFlowState();
                 }
             };
 
@@ -3296,6 +3502,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     diffModalTitle.textContent = `Comparing v${version1.version} vs v${version2.version}`;
                     diffTitleA.textContent = `Version ${version1.version}`;
                     diffTitleB.textContent = `Version ${version2.version}`;
+                    const metaA = `LLM: ${version1.llm || 'N/A'} · Temp: ${version1.temperature ?? 'N/A'} · Top P: ${version1.topP ?? 'N/A'} · Effort: ${version1.effort || 'N/A'}`;
+                    const metaB = `LLM: ${version2.llm || 'N/A'} · Temp: ${version2.temperature ?? 'N/A'} · Top P: ${version2.topP ?? 'N/A'} · Effort: ${version2.effort || 'N/A'}`;
+                    document.getElementById('diff-meta-a').textContent = metaA;
+                    document.getElementById('diff-meta-b').textContent = metaB;
+                    document.getElementById('diff-comments-a').textContent = (version1.comments && version1.comments.trim()) ? `Comments: ${version1.comments}` : '';
+                    document.getElementById('diff-comments-b').textContent = (version2.comments && version2.comments.trim()) ? `Comments: ${version2.comments}` : '';
                     diffPanelA.innerHTML = cleanHtml(dmp.diff_prettyHtml(diff1));
                     diffPanelB.innerHTML = cleanHtml(dmp.diff_prettyHtml(diff2));
 
@@ -3562,7 +3774,19 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                 updatePrompts = true;
                                             }
                                             break;
-                                        case 'general': updatePrompts = true; break;
+                                        case 'general':
+                                            // Remove from all prompts and from general tags library cache
+                                            updatePrompts = true;
+                                            try {
+                                                const GENERAL_TAGS_LIB_KEY = 'promptManagerApp_generalTagsLib';
+                                                let generalTagsLib = JSON.parse(localStorage.getItem(GENERAL_TAGS_LIB_KEY) || '[]');
+                                                if (generalTagsLib.includes(value)) {
+                                                    generalTagsLib = generalTagsLib.filter(t => t !== value);
+                                                    localStorage.setItem(GENERAL_TAGS_LIB_KEY, JSON.stringify(generalTagsLib));
+                                                    updateGlobalList('general_tags_library', generalTagsLib);
+                                                }
+                                            } catch {}
+                                            break;
                                     }
 
                                     if (updatePrompts) {
@@ -3637,6 +3861,35 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     renderListManager();
                     populateLlmSelect();
                 }
+            });
+
+            // Add new General Tag (applies globally, adds to prompts only when used; here we maintain a synthetic list via union of prompts tags)
+            addGeneralTagManagerBtn.addEventListener('click', () => {
+                let tagName = addGeneralTagManagerInput.value.trim();
+                if (!tagName) return;
+                if (!tagName.startsWith('#')) tagName = `#${tagName}`;
+
+                // If tag already exists among all prompts, just clear input and refresh list
+                const existing = getAllUniqueTags();
+                if (existing.includes(tagName)) {
+                    addGeneralTagManagerInput.value = '';
+                    renderListManager();
+                    return;
+                }
+
+                // Otherwise, we add it to no prompt by default, but to keep it visible we can persist it in a pseudo library list in global_lists
+                // Approach: store a dedicated list 'general_tags_library' to maintain available general tags not yet used
+                // First, try to fetch from localStorage (mirroring global list cache if any), else start with []
+                const GENERAL_TAGS_LIB_KEY = 'promptManagerApp_generalTagsLib';
+                let generalTagsLib = [];
+                try { generalTagsLib = JSON.parse(localStorage.getItem(GENERAL_TAGS_LIB_KEY) || '[]'); } catch {}
+                if (!generalTagsLib.includes(tagName)) generalTagsLib.push(tagName);
+                localStorage.setItem(GENERAL_TAGS_LIB_KEY, JSON.stringify(generalTagsLib));
+                // Persist to Supabase if available using global_lists
+                updateGlobalList('general_tags_library', generalTagsLib);
+
+                addGeneralTagManagerInput.value = '';
+                renderListManager();
             });
 
             // --- EVENTOS DO INPUT GALLERY ---
@@ -3758,6 +4011,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 populateProjectList(nodeFlowProjectFilter);
                 renderNodeFlowPrompts();
                 renderSavedFlowsList();
+                // Always open empty: reset working canvas state
+                flowNodes = [];
+                flowConnections = [];
+                renderFlowNodes();
+                renderFlowConnections();
+                if (deleteFlowBtn) deleteFlowBtn.disabled = true;
                 nodeFlowModal.classList.remove('hidden');
             });
             closeNodeFlowBtn.addEventListener('click', () => nodeFlowModal.classList.add('hidden'));
@@ -3795,6 +4054,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const flowName = e.target.value;
                 if (flowName) {
                     loadFlow(flowName);
+                    // Enable delete even if no nodes (so user can remove saved record)
+                    if (typeof refreshDeleteFlowState === 'function') refreshDeleteFlowState();
                 }
             });
 
@@ -3827,6 +4088,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 };
                 flowNodes.push(newNode);
                 renderFlowNodes();
+                if (typeof refreshDeleteFlowState === 'function') refreshDeleteFlowState();
             });
             
             nodeFlowCanvas.addEventListener('mousedown', (e) => {
@@ -3924,6 +4186,54 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
             });
 
+            // Helper: enable/disable Delete Flow button
+            // Enable if there are nodes on canvas OR a saved flow is selected in dropdown
+            const refreshDeleteFlowState = () => {
+                if (!deleteFlowBtn) return;
+                const hasNodes = flowNodes.length > 0;
+                const hasSelectedSaved = savedFlowsDropdown && savedFlowsDropdown.value;
+                deleteFlowBtn.disabled = !(hasNodes || hasSelectedSaved);
+            };
+
+            // Delete entire flow (nodes + connections) and any saved record
+            const deleteFlow = async () => {
+                // If a saved flow is selected, remove it from savedFlows and Supabase
+                const selectedName = savedFlowsDropdown ? savedFlowsDropdown.value : '';
+                if (selectedName) {
+                    // Remove locally
+                    savedFlows = savedFlows.filter(f => f.name !== selectedName);
+                    saveFlowsToStorage();
+                    renderSavedFlowsList();
+                    if (savedFlowsDropdown) savedFlowsDropdown.value = '';
+                    // Try to remove from Supabase (if online)
+                    try { await deleteNodeFlowByName(selectedName); } catch (e) { console.error(e); }
+                }
+
+                // Clear working canvas state
+                flowNodes = [];
+                flowConnections = [];
+                renderFlowNodes();
+                renderFlowConnections();
+                refreshDeleteFlowState();
+            };
+
+            // Toolbar button to delete whole flow with confirmation
+            if (deleteFlowBtn) {
+                deleteFlowBtn.addEventListener('click', () => {
+                    // Allow deletion if canvas has nodes or a saved flow is selected
+                    const canDelete = flowNodes.length > 0 || (savedFlowsDropdown && savedFlowsDropdown.value);
+                    if (!canDelete) return;
+                    showModal(
+                        'Delete Flow',
+                        'Delete the entire flow (all nodes and connections)? This cannot be undone.',
+                        [
+                            { text: 'Cancel', className: 'action-button', onClick: hideModal },
+                            { text: 'Delete', className: 'action-button bg-[--accent-red] text-white border-[--accent-red-hover] hover:bg-[--accent-red-hover]', onClick: async () => { hideModal(); await deleteFlow(); } }
+                        ]
+                    );
+                });
+            }
+
             nodeFlowContent.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 const nodeEl = e.target.closest('.flow-node');
@@ -3933,6 +4243,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     flowConnections = flowConnections.filter(c => c.source != nodeId && c.target != nodeId);
                     renderFlowNodes();
                     renderFlowConnections();
+                    if (typeof refreshDeleteFlowState === 'function') refreshDeleteFlowState();
                 }
             });
             
