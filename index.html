@@ -2117,6 +2117,28 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 dbOnline = false;
             }
 
+                        // Handle password recovery tokens from URL fragment
+                        (function() {
+                            try {
+                                if (!supabaseClient) return;
+                                const hash = window.location.hash || '';
+                                if (!hash || hash.indexOf('access_token=') === -1) return;
+                                const params = new URLSearchParams(hash.replace(/^#/, ''));
+                                const access_token = params.get('access_token');
+                                const refresh_token = params.get('refresh_token');
+                                const type = params.get('type');
+                                if (access_token && refresh_token) {
+                                    supabaseClient.auth.setSession({ access_token, refresh_token }).then(() => {
+                                        try { history.replaceState(null, '', window.location.pathname + window.location.search); } catch {}
+                                        if (type === 'recovery' && typeof window.openLoginModal === 'function') {
+                                            window.openLoginModal();
+                                            try { window.setMode && window.setMode('newpass'); } catch {}
+                                        }
+                                    }).catch(() => {});
+                                }
+                            } catch {}
+                        })();
+
                                     // --- Login Modal Wiring (Email + Password) ---
                         (function() {
                             try {
@@ -2140,23 +2162,27 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                     titleEl.textContent = 'Sign in';
                                                     descEl.textContent = 'Enter your email and password to sign in.';
                                                     submitBtn.textContent = 'Sign in';
+                                                pwdInput.classList.remove('hidden');
                                                     pwdConfirm.classList.add('hidden');
                                                     toggleModeBtn.textContent = 'Create account';
                                                 } else if (mode === 'signup') {
                                                     titleEl.textContent = 'Create account';
                                                     descEl.textContent = 'Enter your email and a new password to create an account.';
                                                     submitBtn.textContent = 'Create account';
+                                                pwdInput.classList.remove('hidden');
                                                     pwdConfirm.classList.remove('hidden');
                                                     toggleModeBtn.textContent = 'Have an account? Sign in';
                                                                 } else if (mode === 'reset') {
                                                     titleEl.textContent = 'Reset password';
                                                     descEl.textContent = 'Enter your email to receive a reset link.';
                                                     submitBtn.textContent = 'Send reset link';
+                                                pwdInput.classList.add('hidden');
                                                     pwdConfirm.classList.add('hidden');
                                                                 } else if (mode === 'newpass') {
                                                                     titleEl.textContent = 'Set new password';
                                                                     descEl.textContent = 'Enter and confirm your new password.';
                                                                     submitBtn.textContent = 'Update password';
+                                                pwdInput.classList.remove('hidden');
                                                                     pwdConfirm.classList.remove('hidden');
                                                 }
                                                 statusEl.textContent = '';
@@ -2269,6 +2295,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                         }).catch(() => {});
                                     } catch {}
                                 }
+                                                    // expose mode setter globally for URL-based handlers
+                                                    window.setMode = setMode;
                                                     // default mode
                                                     setMode('signin');
                             } catch {}
@@ -3352,6 +3380,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         loadFromLocalStorage();
                         return;
                     }
+
+                    // Require auth for fetching app data
+                    try {
+                        const { data: sess } = await supabaseClient.auth.getSession();
+                        if (!sess?.session) {
+                            // signed out: don't fallback to localStorage; prompt login via initializeApp()
+                            return;
+                        }
+                    } catch {}
 
                     console.log("Fetching data from Supabase...");
 
