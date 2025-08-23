@@ -709,7 +709,13 @@
                     </svg>
                 </button>
                 <!-- Inline Auth (Magic Link) will render here -->
-                <div id="auth-inline" class="hidden items-center gap-2"></div>
+                                <div id="auth-inline" class="hidden items-center gap-2"></div>
+                                <div id="profile-inline" class="hidden items-center gap-2 ml-2">
+                                    <span id="profile-email" class="text-[10px] font-mono text-[--text-muted-dark]"></span>
+                                    <input id="profile-fullname" type="text" placeholder="Full name" class="form-control compact-field rounded-md text-xs w-40 hidden"/>
+                                    <button id="profile-edit-btn" class="action-button text-xs hidden">Edit</button>
+                                    <button id="profile-save-btn" class="action-button text-xs hidden">Save</button>
+                                </div>
             </div>
         </header>
 
@@ -2347,6 +2353,66 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                         } catch {}
                                     })();
                                     // --- End compact header toggle ---
+
+                                                // --- Profiles inline UI (email + editable full_name) ---
+                                                (function() {
+                                                    try {
+                                                        const host = document.getElementById('profile-inline');
+                                                        const emailEl = document.getElementById('profile-email');
+                                                        const fullnameInput = document.getElementById('profile-fullname');
+                                                        const editBtn = document.getElementById('profile-edit-btn');
+                                                        const saveBtn = document.getElementById('profile-save-btn');
+
+                                                        async function refresh() {
+                                                            if (!supabaseClient) { host.classList.add('hidden'); return; }
+                                                            const { data } = await supabaseClient.auth.getUser();
+                                                            const user = data?.user;
+                                                            if (!user) { host.classList.add('hidden'); return; }
+                                                            host.classList.remove('hidden');
+                                                            emailEl.textContent = user.email || '';
+                                                            // Load profile.full_name
+                                                            try {
+                                                                const { data: prof } = await supabaseClient.from('profiles').select('full_name').single();
+                                                                const fullname = prof?.full_name || '';
+                                                                fullnameInput.value = fullname;
+                                                                editBtn.classList.remove('hidden');
+                                                                fullnameInput.classList.add('hidden');
+                                                                saveBtn.classList.add('hidden');
+                                                            } catch {
+                                                                // If RLS blocks or row missing, attempt create on save
+                                                                editBtn.classList.remove('hidden');
+                                                            }
+                                                        }
+
+                                                        if (editBtn) editBtn.addEventListener('click', () => {
+                                                            fullnameInput.classList.remove('hidden');
+                                                            saveBtn.classList.remove('hidden');
+                                                            editBtn.classList.add('hidden');
+                                                            try { fullnameInput.focus(); } catch {}
+                                                        });
+
+                                                        if (saveBtn) saveBtn.addEventListener('click', async () => {
+                                                            try {
+                                                                const name = (fullnameInput.value || '').trim();
+                                                                const { data: userData } = await supabaseClient.auth.getUser();
+                                                                const id = userData?.user?.id;
+                                                                if (!id) return;
+                                                                const { error } = await supabaseClient.from('profiles').upsert({ id, full_name: name }).select().single();
+                                                                if (!error) {
+                                                                    fullnameInput.classList.add('hidden');
+                                                                    saveBtn.classList.add('hidden');
+                                                                    editBtn.classList.remove('hidden');
+                                                                }
+                                                            } catch {}
+                                                        });
+
+                                                        if (supabaseClient) {
+                                                            try { supabaseClient.auth.onAuthStateChange(() => { refresh(); }); } catch {}
+                                                            refresh();
+                                                        }
+                                                    } catch {}
+                                                })();
+                                                // --- End profiles inline UI ---
 
             const PROMPTS_STORAGE_KEY = 'promptManagerApp_prompts';
             const XML_TAGS_STORAGE_KEY = 'promptManagerApp_xmlTags';
