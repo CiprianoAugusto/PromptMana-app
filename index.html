@@ -713,6 +713,68 @@
             </div>
         </header>
 
+                <!-- Login Modal (Magic Link) -->
+                <div id="login-modal" class="fixed inset-0 bg-black/60 hidden items-center justify-center z-50">
+                    <div class="bg-[--card-bg-dark] border border-[--border-dark] rounded-lg shadow-2xl w-full max-w-md p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h2 class="text-lg font-semibold">Sign in</h2>
+                            <button id="login-modal-close" class="p-1 rounded hover:bg-[#333]" aria-label="Close">&times;</button>
+                        </div>
+                        <p class="text-xs text-[--text-muted-dark] mb-3">Enter your email to receive a magic link.</p>
+                        <div class="space-y-2">
+                            <input id="login-email-input" type="email" placeholder="you@email.com" class="form-control w-full rounded-md py-2 px-3"/>
+                            <button id="login-send-link" class="action-button primary w-full">Send Magic Link</button>
+                            <p id="login-status" class="text-xs text-[--text-muted-dark] mt-1"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security: Cloud-only data (guard localStorage to UI-only keys) -->
+                <script>
+                    (function() {
+                        const LS_ALLOW = new Set(['pm_theme']);
+                        const orig = {
+                            getItem: localStorage.getItem.bind(localStorage),
+                            setItem: localStorage.setItem.bind(localStorage),
+                            removeItem: localStorage.removeItem.bind(localStorage),
+                            clear: localStorage.clear.bind(localStorage),
+                            key: localStorage.key ? localStorage.key.bind(localStorage) : null,
+                            length: Object.getOwnPropertyDescriptor(Object.getPrototypeOf(localStorage) || {}, 'length')
+                        };
+                        // Expose originals for intentional admin cleanup
+                        window.__ls_orig = orig;
+
+                        localStorage.getItem = (k) => (LS_ALLOW.has(k) ? orig.getItem(k) : null);
+                        localStorage.setItem = (k, v) => { if (LS_ALLOW.has(k)) orig.setItem(k, v); };
+                        localStorage.removeItem = (k) => { if (LS_ALLOW.has(k)) orig.removeItem(k); };
+                        localStorage.clear = () => {
+                            try {
+                                // Remove everything except allowed keys
+                                const keys = [];
+                                for (let i = 0; i < window.__ls_orig.clear.length; i++) {
+                                    const key = window.__ls_orig.key ? window.__ls_orig.key(i) : null;
+                                    if (key) keys.push(key);
+                                }
+                                keys.forEach(k => { if (!LS_ALLOW.has(k)) orig.removeItem(k); });
+                            } catch (_) {
+                                // Fallback: attempt common app keys wipe
+                                const COMMON_KEYS = [
+                                    'PROMPTS_STORAGE_KEY','TEMPLATES_STORAGE_KEY','INPUT_GALLERY_STORAGE_KEY','NODE_FLOWS_STORAGE_KEY',
+                                    'XML_TAGS_STORAGE_KEY','VAR_LIBRARY_STORAGE_KEY','LLM_LIST_STORAGE_KEY','PROJECTS_STORAGE_KEY',
+                                    'PROJECT_REPO_MAP_STORAGE_KEY','GENERAL_TAGS_LIB_KEY','github_repo_list','llm_multi','llm_active',
+                                    'gh_multi','gh_active','gh_repo'
+                                ];
+                                COMMON_KEYS.forEach(k => orig.removeItem(k));
+                            }
+                        };
+
+                        // One-time purge of legacy keys on load
+                        try { localStorage.clear(); } catch {}
+                        // Add a global helper to purge again after auth
+                        window.clearAppLocalData = function() { try { localStorage.clear(); } catch {} };
+                    })();
+                </script>
+
         <div id="main-content" class="flex flex-grow overflow-hidden transition-filter duration-300">
             <!-- PAINEL ESQUERDO -->
           <aside class="sidebar p-4 flex flex-col">
@@ -1838,7 +1900,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         // --- Inline Auth UI (header, beside theme toggle) ---
                         (() => {
                             try {
-                                const SHOW_AUTH_INLINE = true; // render compact auth in header
+                                const SHOW_AUTH_INLINE = false; // prefer the Login Modal UX
                                 const host = document.getElementById('auth-inline');
                                 if (!SHOW_AUTH_INLINE || !host) return;
 
@@ -2023,16 +2085,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
 
             // --- CONFIGURAÇÃO DO SUPABASE ---
-        // Limpo para novo projeto: defina abaixo os valores do seu novo projeto Supabase
-        // Dica: pegue em Studio > Project Settings > API
-        const SUPABASE_URL = '';
-        const SUPABASE_ANON_KEY = '';
+        // Projeto ativo (Studio > Project Settings > API)
+        const SUPABASE_URL = 'https://bwhalclycvkiifgyvuup.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3aGFsY2x5Y3ZraWlmZ3l2dXVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5MTEzODMsImV4cCI6MjA3MTQ4NzM4M30.OP2YnoR-5zCRJxAQBuk9h5gbGewsWaWICpISLbE5gpQ';
 
-        // Não expor UI para editar; usar valores fixos em código
+        // Valores finais (não editar via UI)
         const FINAL_SUPABASE_URL = SUPABASE_URL;
         const FINAL_SUPABASE_KEY = SUPABASE_ANON_KEY;
 
-            let supabaseClient = null;
+                        let supabaseClient = null;
             let dbOnline = false;
             try {
                 if (!FINAL_SUPABASE_URL || !FINAL_SUPABASE_KEY) {
@@ -2049,6 +2110,128 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 supabaseClient = null;
                 dbOnline = false;
             }
+
+                        // --- Login Modal Wiring (Magic Link) ---
+                        (function() {
+                            try {
+                                const modal = document.getElementById('login-modal');
+                                const emailInput = document.getElementById('login-email-input');
+                                const sendBtn = document.getElementById('login-send-link');
+                                const statusEl = document.getElementById('login-status');
+                                const closeBtn = document.getElementById('login-modal-close');
+
+                                function openLoginModal() {
+                                    if (!modal) return;
+                                    modal.classList.remove('hidden');
+                                    // focus input shortly after open
+                                    setTimeout(() => { try { emailInput && emailInput.focus(); } catch {} }, 50);
+                                }
+                                function closeLoginModal() {
+                                    if (!modal) return;
+                                    modal.classList.add('hidden');
+                                    if (statusEl) statusEl.textContent = '';
+                                }
+                                // expose globally for other handlers
+                                window.openLoginModal = openLoginModal;
+                                window.closeLoginModal = closeLoginModal;
+
+                                // Close interactions
+                                if (closeBtn) closeBtn.addEventListener('click', closeLoginModal);
+                                if (modal) {
+                                    modal.addEventListener('click', (e) => {
+                                        if (e.target === modal) closeLoginModal();
+                                    });
+                                }
+                                document.addEventListener('keydown', (e) => {
+                                    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeLoginModal();
+                                });
+
+                                // Send magic link
+                                if (sendBtn) {
+                                    sendBtn.addEventListener('click', async () => {
+                                        try {
+                                            if (!supabaseClient) { if (statusEl) statusEl.textContent = 'Supabase indisponível'; return; }
+                                            const email = (emailInput?.value || '').trim();
+                                            if (!email) { if (statusEl) statusEl.textContent = 'Informe seu e-mail'; return; }
+                                            sendBtn.disabled = true;
+                                            const redirect = window.location.origin + window.location.pathname;
+                                            const { error } = await supabaseClient.auth.signInWithOtp({ email, options: { emailRedirectTo: redirect } });
+                                            if (error) { if (statusEl) statusEl.textContent = 'Erro ao enviar link'; sendBtn.disabled = false; return; }
+                                            if (statusEl) statusEl.textContent = 'Link enviado. Verifique seu e-mail.';
+                                        } catch {
+                                            if (statusEl) statusEl.textContent = 'Falha no envio';
+                                        } finally {
+                                            // Re-enable after short delay to avoid spamming
+                                            setTimeout(() => { try { sendBtn.disabled = false; } catch {} }, 1500);
+                                        }
+                                    });
+                                }
+
+                                // If already logged in, ensure modal stays closed
+                                if (supabaseClient) {
+                                    try {
+                                        supabaseClient.auth.onAuthStateChange((evt) => {
+                                            if (evt === 'SIGNED_IN') {
+                                                try { window.clearAppLocalData && window.clearAppLocalData(); } catch {}
+                                                closeLoginModal();
+                                                // Reload to re-init app state with session
+                                                window.location.reload();
+                                            }
+                                        });
+                                        // Also close if a session already exists on load
+                                        supabaseClient.auth.getSession().then(({ data }) => {
+                                            if (data?.session) closeLoginModal();
+                                        }).catch(() => {});
+                                    } catch {}
+                                }
+                            } catch {}
+                        })();
+                        // --- End Login Modal Wiring ---
+
+                                    // --- Compact header Sign in/Sign out toggle ---
+                                    (function() {
+                                        try {
+                                            const host = document.getElementById('auth-inline');
+                                            if (!host) return;
+                                            host.classList.remove('hidden');
+                                            host.classList.add('flex');
+                                            host.innerHTML = '';
+
+                                            const signInBtn = document.createElement('button');
+                                            signInBtn.id = 'btn-open-login';
+                                            signInBtn.textContent = 'Sign in';
+                                            signInBtn.className = 'action-button text-xs';
+
+                                            const signOutBtn = document.createElement('button');
+                                            signOutBtn.id = 'btn-sign-out';
+                                            signOutBtn.textContent = 'Sign out';
+                                            signOutBtn.className = 'action-button text-xs hidden';
+
+                                            host.appendChild(signInBtn);
+                                            host.appendChild(signOutBtn);
+
+                                            signInBtn.addEventListener('click', () => {
+                                                try { window.openLoginModal && window.openLoginModal(); } catch {}
+                                            });
+                                            signOutBtn.addEventListener('click', async () => {
+                                                try { await supabaseClient?.auth?.signOut(); } catch {}
+                                            });
+
+                                            async function refresh() {
+                                                try {
+                                                    const { data } = await supabaseClient.auth.getUser();
+                                                    const logged = !!data?.user;
+                                                    signInBtn.classList.toggle('hidden', logged);
+                                                    signOutBtn.classList.toggle('hidden', !logged);
+                                                } catch {}
+                                            }
+                                            if (supabaseClient) {
+                                                try { supabaseClient.auth.onAuthStateChange(() => { refresh(); }); } catch {}
+                                                refresh();
+                                            }
+                                        } catch {}
+                                    })();
+                                    // --- End compact header toggle ---
 
             const PROMPTS_STORAGE_KEY = 'promptManagerApp_prompts';
             const XML_TAGS_STORAGE_KEY = 'promptManagerApp_xmlTags';
@@ -8482,8 +8665,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
 
             // --- INICIALIZAÇÃO ---
-            const initializeApp = async () => {
-                await loadDataFromSupabase(); // Espera os dados do Supabase carregarem
+                        const initializeApp = async () => {
+                                try {
+                                    if (supabaseClient) {
+                                        const { data } = await supabaseClient.auth.getSession();
+                                        if (!data?.session && typeof window.openLoginModal === 'function') {
+                                            window.openLoginModal();
+                                        }
+                                    }
+                                } catch {}
+                                await loadDataFromSupabase(); // Espera os dados do Supabase carregarem
                 populateLlmSelect();
                 // Auto-run Diagnostics: verify and filter models to only OK ones
                 try { await verifyAndFilterModels(); } catch {}
@@ -8498,14 +8689,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             initializeApp();
         });
 
-      const SUPABASE_URL = 'https://bwhalclycvkiifgyvuup.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3aGFsY2x5Y3ZraWlmZ3l2dXVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5MTEzODMsImV4cCI6MjA3MTQ4NzM4M30.OP2YnoR-5zCRJxAQBuk9h5gbGewsWaWICpISLbE5gpQ';
-  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // Teste rápido
-  supabaseClient.auth.getSession().then(({ data, error }) => {
-    console.log('Supabase conectado?', !!data?.session || !error, { data, error });
-  });
+  
     </script>
 </body>
 </html>
