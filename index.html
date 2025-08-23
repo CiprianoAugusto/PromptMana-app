@@ -2132,8 +2132,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                             const titleEl = document.getElementById('login-modal-title');
                                             const descEl = document.getElementById('login-modal-desc');
 
-                                            // mode: 'signin' | 'signup' | 'reset'
-                                            let loginMode = 'signin';
+                                                            // mode: 'signin' | 'signup' | 'reset' | 'newpass'
+                                                            let loginMode = 'signin';
                                             function setMode(mode) {
                                                 loginMode = mode;
                                                 if (mode === 'signin') {
@@ -2148,11 +2148,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                     submitBtn.textContent = 'Create account';
                                                     pwdConfirm.classList.remove('hidden');
                                                     toggleModeBtn.textContent = 'Have an account? Sign in';
-                                                } else {
+                                                                } else if (mode === 'reset') {
                                                     titleEl.textContent = 'Reset password';
                                                     descEl.textContent = 'Enter your email to receive a reset link.';
                                                     submitBtn.textContent = 'Send reset link';
                                                     pwdConfirm.classList.add('hidden');
+                                                                } else if (mode === 'newpass') {
+                                                                    titleEl.textContent = 'Set new password';
+                                                                    descEl.textContent = 'Enter and confirm your new password.';
+                                                                    submitBtn.textContent = 'Update password';
+                                                                    pwdConfirm.classList.remove('hidden');
                                                 }
                                                 statusEl.textContent = '';
                                             }
@@ -2219,12 +2224,21 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                                 statusEl.textContent = 'Conta criada. Verifique seu e-mail para confirmar.';
                                                                 // switch back to sign-in
                                                                 setMode('signin');
-                                                            } else {
+                                                                                    } else if (loginMode === 'reset') {
                                                                 const redirect = window.location.origin + window.location.pathname;
                                                                 const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: redirect });
                                                                 if (error) { statusEl.textContent = 'Falha ao enviar reset'; submitBtn.disabled = false; return; }
                                                                 statusEl.textContent = 'Link de reset enviado.';
                                                                 setMode('signin');
+                                                                                    } else if (loginMode === 'newpass') {
+                                                                                        const password = (pwdInput?.value || '').trim();
+                                                                                        const confirm = (pwdConfirm?.value || '').trim();
+                                                                                        if (!password || password.length < 6) { statusEl.textContent = 'Senha deve ter 6+ caracteres'; submitBtn.disabled = false; return; }
+                                                                                        if (password !== confirm) { statusEl.textContent = 'Senhas não coincidem'; submitBtn.disabled = false; return; }
+                                                                                        const { data, error } = await supabaseClient.auth.updateUser({ password });
+                                                                                        if (error) { statusEl.textContent = 'Falha ao atualizar senha'; submitBtn.disabled = false; return; }
+                                                                                        statusEl.textContent = 'Senha atualizada. Entre novamente.';
+                                                                                        setMode('signin');
                                                             }
                                                         } catch {
                                                             statusEl.textContent = 'Erro inesperado';
@@ -2237,8 +2251,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 // If already logged in, ensure modal stays closed
                                 if (supabaseClient) {
                                     try {
-                                                            supabaseClient.auth.onAuthStateChange((evt) => {
-                                                                if (evt === 'SIGNED_IN') {
+                                                                                supabaseClient.auth.onAuthStateChange((evt) => {
+                                                                                    if (evt === 'PASSWORD_RECOVERY') {
+                                                                                        openLoginModal();
+                                                                                        setMode('newpass');
+                                                                                        try { pwdInput?.focus(); } catch {}
+                                                                                    } else if (evt === 'SIGNED_IN') {
                                                 try { window.clearAppLocalData && window.clearAppLocalData(); } catch {}
                                                 closeLoginModal();
                                                 // Reload to re-init app state with session
