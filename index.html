@@ -966,10 +966,26 @@
                     </div>
                 </div>
 
-                <!-- Security: Cloud-only data (guard localStorage to UI-only keys) -->
+                <!-- Security: Cloud-only data (guard localStorage to UI-only keys)
+                     Important: allow Supabase auth keys so session persists. -->
                 <script>
                     (function() {
+                        // UI-only keys we control
                         const LS_ALLOW = new Set(['pm_theme']);
+                        // Also allow Supabase auth session keys
+                        // supabase-js v2 stores the session under: sb-<project-ref>-auth-token
+                        // Keep a regex so overrides/env changes still work.
+                        const ALLOW_REGEX = [/^sb-.+-auth-token$/];
+                        const EXTRA_ALLOW = new Set([
+                            // Legacy/v1 or edge cases
+                            'supabase.auth.token',
+                        ]);
+                        const isAllowedKey = (k) => {
+                            try {
+                                if (LS_ALLOW.has(k) || EXTRA_ALLOW.has(k)) return true;
+                                return ALLOW_REGEX.some((re) => re.test(k));
+                            } catch { return false; }
+                        };
                         const orig = {
                             getItem: localStorage.getItem.bind(localStorage),
                             setItem: localStorage.setItem.bind(localStorage),
@@ -981,9 +997,9 @@
                         // Expose originals for intentional admin cleanup
                         window.__ls_orig = orig;
 
-                        localStorage.getItem = (k) => (LS_ALLOW.has(k) ? orig.getItem(k) : null);
-                        localStorage.setItem = (k, v) => { if (LS_ALLOW.has(k)) orig.setItem(k, v); };
-                        localStorage.removeItem = (k) => { if (LS_ALLOW.has(k)) orig.removeItem(k); };
+                        localStorage.getItem = (k) => (isAllowedKey(k) ? orig.getItem(k) : null);
+                        localStorage.setItem = (k, v) => { if (isAllowedKey(k)) orig.setItem(k, v); };
+                        localStorage.removeItem = (k) => { if (isAllowedKey(k)) orig.removeItem(k); };
                         localStorage.clear = () => {
                             try {
                                 // Remove everything except allowed keys (iterate via native key/length)
@@ -993,7 +1009,7 @@
                                     const key = orig.key ? orig.key(i) : null;
                                     if (key) keys.push(key);
                                 }
-                                keys.forEach(k => { if (!LS_ALLOW.has(k)) orig.removeItem(k); });
+                                keys.forEach(k => { if (!isAllowedKey(k)) orig.removeItem(k); });
                             } catch (_) {
                                 // Fallback: attempt common app keys wipe
                                 const COMMON_KEYS = [
@@ -1002,7 +1018,7 @@
                                     'PROJECT_REPO_MAP_STORAGE_KEY','GENERAL_TAGS_LIB_KEY','github_repo_list','llm_multi','llm_active',
                                     'gh_multi','gh_active','gh_repo'
                                 ];
-                                COMMON_KEYS.forEach(k => { try { orig.removeItem(k); } catch {} });
+                                COMMON_KEYS.forEach(k => { try { if (!isAllowedKey(k)) orig.removeItem(k); } catch {} });
                             }
                         };
 
@@ -2611,7 +2627,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                                 function getSafeRedirect() {
                                                                     try {
                                                                         if (location.protocol === 'http:' || location.protocol === 'https:') {
-                                                                            return window.location.origin + window.location.pathname;
+                                                                            const qs = location.search || '';
+                                                                            return window.location.origin + window.location.pathname + qs;
                                                                         }
                                                                     } catch {}
                                                                     return null;
@@ -2676,7 +2693,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                 setMode('newpass');
                                                 try { pwdInput?.focus(); } catch {}
                                             } else if (evt === 'SIGNED_IN') {
-                                                try { window.clearAppLocalData && window.clearAppLocalData(); } catch {}
+                                                // Keep auth tokens; do not clear localStorage here.
                                                 closeLoginModal();
                                                 // Reload to re-init app state with session
                                                 window.location.reload();
@@ -2688,8 +2705,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                         });
                                         // Gate on load if no active session
                                         supabaseClient.auth.getSession().then(({ data }) => {
-                                            if (data?.session) closeLoginModal();
-                                            else { openLoginModal(); setMode('signin'); }
+                                            if (data?.session) {
+                                                closeLoginModal();
+                                            } else {
+                                                openLoginModal();
+                                                setMode('signin');
+                                            }
                                         }).catch(() => {});
                                     } catch {}
                                 }
@@ -2818,8 +2839,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                             try {
                                                                 const { data } = await supabaseClient.auth.getUser();
                                                                 if (!data?.user) { window.openLoginModal && window.openLoginModal(); return; }
+                                                                // User exists -> open account modal
+                                                                openModal();
+                                                                return;
                                                             } catch {}
-                                                            openModal();
+                                                            // Fallback: if anything fails, show login instead of looping
+                                                            window.openLoginModal && window.openLoginModal();
                                                         });
                                                         if (closeBtn) closeBtn.addEventListener('click', closeModal);
                                                         if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
