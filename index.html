@@ -6487,8 +6487,17 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         } catch {}
                         renderLlmApiList();
                         try { populateServerSelectOptions(); } catch {}
-                        try { startBlinkForConn(connId); } catch {}
-                        try { await verifyAndFilterModels(); } catch {}
+                        // Load/seed models for this connection and show them immediately
+                        try { await fetchModelsForConn(entry); stopBlinkForConn(connId); } catch {}
+                        // Ensure the Models section is visible and refreshed
+                        try {
+                            const modelsBox = document.getElementById('llm-available-models');
+                            const caret = document.getElementById('llm-provider-openai-caret');
+                            if (modelsBox) modelsBox.classList.remove('hidden');
+                            if (caret) caret.textContent = '▼';
+                            renderLlmModelsPerConn();
+                        } catch {}
+                        // Keep lists coherent with connections, but avoid aggressive verification now
                         syncLlmListWithConnections();
                         show('Conexão adicionada', true);
                     } catch (e) {
