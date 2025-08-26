@@ -1716,7 +1716,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 <textarea id="llm-curl-input" rows="3" placeholder="Paste a curl command (optional)" class="form-control bg-[#111] w-full mt-1 rounded-md px-2 py-1 text-xs"></textarea>
                             </div>
                             <div class="md:w-1/2">
-                                <button id="llm-add-api-btn" class="action-button primary w-full md:w-auto">ADD LLM</button>
+                                <div class="flex items-center gap-2">
+                                    <button id="llm-add-api-btn" class="action-button primary w-full md:w-auto">ADD LLM</button>
+                                    <span id="llm-add-status" class="text-xs font-mono text-[--text-muted-dark]"></span>
+                                </div>
                             </div>
                         </div>
                         <hr class="border-[--border-dark]">
@@ -5562,6 +5565,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const apiTabBtns = document.querySelectorAll('.api-tab-btn');
             const llmApiListEl = document.getElementById('llm-api-list');
             const llmAddApiBtn = document.getElementById('llm-add-api-btn');
+            const llmAddStatus = document.getElementById('llm-add-status');
             const ghRepoListEl = document.getElementById('github-repo-list');
             const ghAddRepoBtn = document.getElementById('github-add-repo-btn');
             // Proxy is always ON; remove UI toggle
@@ -6398,72 +6402,74 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             if (verifyAllBtn) verifyAllBtn.addEventListener('click', verifyAllModels);
                 // LLM multi connections
                 if (llmAddApiBtn) llmAddApiBtn.addEventListener('click', async () => {
-                    // Determine source: server dropdown or curl
-                    let base = getSelectedServerBase();
-                    let key  = (llmApiKeyInput?.value || '').trim();
-                    if ((!base || !key) && llmCurlInput && llmCurlInput.value.trim()) {
-                        const parsed = parseCurl(llmCurlInput.value.trim());
-                        if (parsed && parsed.base && parsed.key) {
-                            base = parsed.base; key = key || parsed.key;
+                    const show = (msg, ok) => { try { if (llmAddStatus) { llmAddStatus.textContent = msg; llmAddStatus.style.color = ok ? 'var(--accent-mint)' : 'var(--accent-red)'; } } catch {} };
+                    const clear = () => { try { if (llmAddStatus) { llmAddStatus.textContent = ''; llmAddStatus.style.color = 'var(--text-muted-dark)'; } } catch {} };
+                    try {
+                        clear();
+                        // Validate Supabase config
+                        if (!FINAL_SUPABASE_URL || !FINAL_SUPABASE_KEY) { show('Supabase não configurado', false); return; }
+                        // Require user session (RLS)
+                        try {
+                            const { data } = await (supabaseClient?.auth?.getSession?.() || {});
+                            const sess = data?.session;
+                            if (!sess) { show('Faça login para adicionar', false); window.openLoginModal && window.openLoginModal(); return; }
+                        } catch { show('Faça login para adicionar', false); window.openLoginModal && window.openLoginModal(); return; }
+                        // Determine source: server dropdown or curl
+                        let base = getSelectedServerBase();
+                        let key  = (llmApiKeyInput?.value || '').trim();
+                        if ((!base || !key) && llmCurlInput && llmCurlInput.value.trim()) {
+                            const parsed = parseCurl(llmCurlInput.value.trim());
+                            if (parsed && parsed.base && parsed.key) { base = parsed.base; key = key || parsed.key; }
                         }
-                    }
-                    if (!base || !key) return;
-                    // Proxy-only: require server storage
-            {
-                        let savedOnServer = false;
-                        if (FINAL_SUPABASE_URL && FINAL_SUPABASE_KEY) {
-                            await detectFnVariants();
-                            const baseFn = FINAL_SUPABASE_URL.replace(/\/$/, '') + '/functions/v1';
-                            const headersFn = await buildFnHeaders();
-                            // If we have a pending created by Test for this base, reuse it; else create
-                            let connId = PENDING_LLM_CONN && PENDING_LLM_CONN.base === base ? PENDING_LLM_CONN.id : null;
-                            if (!connId) {
-                                let res;
-                                const label = (() => { try { return new URL(base).hostname; } catch { return 'LLM'; } })();
-                                const provider = (typeof detectProvider === 'function') ? detectProvider(base) : 'openai';
-                                if (FN_VARIANTS.saveConfig === 'new') {
-                                    res = await fetch(baseFn + '/save-ai-api-config', { method: 'POST', headers: headersFn, body: JSON.stringify({ name: label, provider, base_url: base, api_key: key }) });
-                                    if (res.status === 401 || res.status === 403) {
-                                        // Fallback when new config suite requires auth not available in this context
-                                        res = await fetch(baseFn + '/connections-manager', { method: 'POST', headers: headersFn, body: JSON.stringify({ type: 'llm', label, base_url: base, api_key: key, provider }) });
-                                    } else if (!res.ok && FN_VARIANTS.connLlm === 'present') {
-                                        // If new endpoint failed for other reasons but dedicated connections-llm exists, try it
-                                        res = await fetch(baseFn + '/connections-llm', { method: 'POST', headers: headersFn, body: JSON.stringify({ label, provider, base_url: base, api_key: key }) });
-                                    }
-                                } else if (FN_VARIANTS.connLlm === 'present') {
-                                    res = await fetch(baseFn + '/connections-llm', { method: 'POST', headers: headersFn, body: JSON.stringify({ label, provider, base_url: base, api_key: key }) });
-                                } else {
+                        if (!base || !key) { show('Selecione servidor e informe API key', false); return; }
+                        // Detect functions
+                        await detectFnVariants();
+                        const baseFn = FINAL_SUPABASE_URL.replace(/\/$/, '') + '/functions/v1';
+                        const headersFn = await buildFnHeaders();
+                        // Create server-stored connection
+                        let connId = PENDING_LLM_CONN && PENDING_LLM_CONN.base === base ? PENDING_LLM_CONN.id : null;
+                        if (!connId) {
+                            let res;
+                            const label = (() => { try { return new URL(base).hostname; } catch { return 'LLM'; } })();
+                            const provider = (typeof detectProvider === 'function') ? detectProvider(base) : 'openai';
+                            if (FN_VARIANTS.saveConfig === 'new') {
+                                res = await fetch(baseFn + '/save-ai-api-config', { method: 'POST', headers: headersFn, body: JSON.stringify({ name: label, provider, base_url: base, api_key: key }) });
+                                if (res.status === 401 || res.status === 403) {
                                     res = await fetch(baseFn + '/connections-manager', { method: 'POST', headers: headersFn, body: JSON.stringify({ type: 'llm', label, base_url: base, api_key: key, provider }) });
+                                } else if (!res.ok && FN_VARIANTS.connLlm === 'present') {
+                                    res = await fetch(baseFn + '/connections-llm', { method: 'POST', headers: headersFn, body: JSON.stringify({ label, provider, base_url: base, api_key: key }) });
                                 }
-                                if (!res.ok) throw new Error('create-failed');
-                                const { id } = await res.json();
-                                connId = id;
-                                PENDING_LLM_CONN = { id: connId, base, label, server: true };
+                            } else if (FN_VARIANTS.connLlm === 'present') {
+                                res = await fetch(baseFn + '/connections-llm', { method: 'POST', headers: headersFn, body: JSON.stringify({ label, provider, base_url: base, api_key: key }) });
+                            } else {
+                                res = await fetch(baseFn + '/connections-manager', { method: 'POST', headers: headersFn, body: JSON.stringify({ type: 'llm', label, base_url: base, api_key: key, provider }) });
                             }
-                            if (connId) {
-                                const list = JSON.parse(localStorage.getItem(API_KEYS.llm_multi) || '[]');
-                                const idx = list.findIndex(i => i.id === connId);
-                                const entry = { id: connId, base, label: (PENDING_LLM_CONN?.label || (()=>{ try { return new URL(base).hostname; } catch { return 'LLM'; } })()), server: true };
-                                if (idx >= 0) list[idx] = entry; else list.push(entry);
-                                localStorage.setItem(API_KEYS.llm_multi, JSON.stringify(list));
-                                localStorage.setItem(API_KEYS.llm_active, connId);
-                                savedOnServer = true;
-                            }
+                            if (!res || !res.ok) { show('Falha ao salvar conexão', false); return; }
+                            const { id } = await res.json();
+                            connId = id;
+                            PENDING_LLM_CONN = { id: connId, base, label, server: true };
                         }
-                        if (!savedOnServer) { throw new Error('Failed to save on server. Configure Supabase and try again.'); }
-                        // Ensure providers also appear in Target list: seed cache from library (Anthropic/Cohere/Google/Mistral/OpenAI)
+                        if (!connId) { show('Não foi possível criar conexão', false); return; }
+                        // Persist to local list and mark active
+                        const list = JSON.parse(localStorage.getItem(API_KEYS.llm_multi) || '[]');
+                        const idx = list.findIndex(i => i.id === connId);
+                        const entry = { id: connId, base, label: (PENDING_LLM_CONN?.label || (()=>{ try { return new URL(base).hostname; } catch { return 'LLM'; } })()), server: true };
+                        if (idx >= 0) list[idx] = entry; else list.push(entry);
+                        localStorage.setItem(API_KEYS.llm_multi, JSON.stringify(list));
+                        localStorage.setItem(API_KEYS.llm_active, connId);
+                        // Seed models from provider library to give immediate feedback
                         try {
                             const prov = (typeof detectProvider === 'function') ? detectProvider(base) : 'openai';
                             const conns = (typeof getLlmConnections === 'function') ? getLlmConnections() : [];
-                            const entry = conns.find(i => i.id === connId) || { id: connId, base, label: (PENDING_LLM_CONN?.label || (()=>{ try { return new URL(base).hostname; } catch { return 'LLM'; } })()), server: true };
+                            const entryConn = conns.find(i => i.id === connId) || entry;
                             const seedFromLib = (providerId) => {
                                 const lib = (LLM_STATIC_LIBRARY || []).find(p => p.id === providerId);
                                 const ids = Array.isArray(lib?.models) ? lib.models.slice(0) : [];
                                 if (!ids.length) return;
-                                setModelsCache(entry.id, ids);
+                                setModelsCache(entryConn.id, ids);
                                 try { persistAllModelCachesToServer(); } catch {}
                                 try {
-                                    const group = `${prov} — ${getConnLabel(entry)}`;
+                                    const group = `${prov} — ${getConnLabel(entryConn)}`;
                                     llmList = llmList || {};
                                     llmList[group] = ids;
                                     if (typeof saveLlmListToStorage === 'function') saveLlmListToStorage();
@@ -6481,10 +6487,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         } catch {}
                         renderLlmApiList();
                         try { populateServerSelectOptions(); } catch {}
-                        // Encourage loading: blink the per-connection Load models for this new server
                         try { startBlinkForConn(connId); } catch {}
                         try { await verifyAndFilterModels(); } catch {}
                         syncLlmListWithConnections();
+                        show('Conexão adicionada', true);
+                    } catch (e) {
+                        show(e?.message ? String(e.message).slice(0, 120) : 'Erro inesperado', false);
                     }
                 });
 
