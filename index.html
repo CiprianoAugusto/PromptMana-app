@@ -967,7 +967,14 @@
                 <script>
                     (function() {
                         // UI-only keys we control
-                        const LS_ALLOW = new Set(['pm_theme']);
+                        const LS_ALLOW = new Set([
+                            'pm_theme',
+                            'llm_api_list',
+                            'llm_api_active_id', 
+                            'github_repo_list',
+                            'github_repo_active_id',
+                            'use_proxy_mode'
+                        ]);
                         // Also allow Supabase auth session keys
                         // supabase-js v2 stores the session under: sb-<project-ref>-auth-token
                         // Keep a regex so overrides/env changes still work.
@@ -6407,7 +6414,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     try {
                         clear();
                         // Validate Supabase config
-                        if (!FINAL_SUPABASE_URL || !FINAL_SUPABASE_KEY) { show('Supabase não configurado', false); return; }
+                        if (!FINAL_SUPABASE_URL || !FINAL_SUPABASE_KEY) { 
+                            show('Supabase não configurado', false); 
+                            return; 
+                        }
                         // Require user session (RLS)
                         try {
                             const { data } = await (supabaseClient?.auth?.getSession?.() || {});
