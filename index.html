@@ -824,9 +824,9 @@
                 </button>
                 <!-- Inline Auth placeholder removed (replaced by static Account button) -->
                                 <div id="profile-inline" class="hidden items-center gap-2 ml-2">
-                                    <span id="profile-email" class="text-[10px] font-mono text-[--text-muted-dark]"></span>
+                                    <!-- email hidden per request -->
                                     <input id="profile-fullname" type="text" placeholder="Full name" class="form-control compact-field rounded-md text-xs w-40 hidden"/>
-                                    <button id="profile-edit-btn" class="action-button text-xs hidden">Edit</button>
+                                    <!-- inline Edit removed per request -->
                                     <button id="profile-save-btn" class="action-button text-xs hidden">Save</button>
                                 </div>
                                 <button id="account-btn" class="action-button p-1.5" aria-label="Account">Account</button>
@@ -921,10 +921,7 @@
                             <!-- Profile -->
                             <div class="panel-soft p-3 rounded-md space-y-3">
                                 <h3 class="font-semibold text-sm">Profile</h3>
-                                <div class="grid gap-2 text-sm">
-                                    <label class="text-[--text-muted-dark]">Email</label>
-                                    <input id="account-email" class="form-control rounded-md py-1.5 px-3" disabled>
-                                </div>
+                                <!-- Email field removed per request -->
                                 <div class="grid gap-2 text-sm">
                                     <label class="text-[--text-muted-dark]">Full name</label>
                                     <div class="flex gap-2">
@@ -2735,9 +2732,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                 (function() {
                                                     try {
                                                         const host = document.getElementById('profile-inline');
-                                                        const emailEl = document.getElementById('profile-email');
                                                         const fullnameInput = document.getElementById('profile-fullname');
-                                                        const editBtn = document.getElementById('profile-edit-btn');
+                                                        // email display and inline Edit removed
                                                         const saveBtn = document.getElementById('profile-save-btn');
 
                                                         async function refresh() {
@@ -2746,27 +2742,20 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                             const user = data?.user;
                                                             if (!user) { host.classList.add('hidden'); return; }
                                                             host.classList.remove('hidden');
-                                                            emailEl.textContent = user.email || '';
                                                             // Load profile.full_name
                                                             try {
                                                                 const { data: prof } = await supabaseClient.from('profiles').select('full_name').single();
                                                                 const fullname = prof?.full_name || '';
                                                                 fullnameInput.value = fullname;
-                                                                editBtn.classList.remove('hidden');
                                                                 fullnameInput.classList.add('hidden');
                                                                 saveBtn.classList.add('hidden');
                                                             } catch {
                                                                 // If RLS blocks or row missing, attempt create on save
-                                                                editBtn.classList.remove('hidden');
+                                                                // keep inputs hidden until user clicks save
                                                             }
                                                         }
 
-                                                        if (editBtn) editBtn.addEventListener('click', () => {
-                                                            fullnameInput.classList.remove('hidden');
-                                                            saveBtn.classList.remove('hidden');
-                                                            editBtn.classList.add('hidden');
-                                                            try { fullnameInput.focus(); } catch {}
-                                                        });
+                                                        // Inline Edit button removed
 
                                                         if (saveBtn) saveBtn.addEventListener('click', async () => {
                                                             try {
@@ -2797,7 +2786,6 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                         const accountBtn = document.getElementById('account-btn');
                                                         const modal = document.getElementById('account-modal');
                                                         const closeBtn = document.getElementById('account-close-btn');
-                                                        const emailEl = document.getElementById('account-email');
                                                         const fullnameInput = document.getElementById('account-fullname');
                                                         const saveNameBtn = document.getElementById('account-save-name');
                                                         const nameStatus = document.getElementById('account-name-status');
@@ -2820,7 +2808,6 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                                 const logged = !!user;
                                                                 toggleAccountBtn(logged);
                                                                 if (!logged) return;
-                                                                if (emailEl) emailEl.value = user.email || '';
                                                                 try {
                                                                     const { data: prof } = await supabaseClient.from('profiles').select('full_name').single();
                                                                     const fullname = prof?.full_name || '';
