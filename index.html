@@ -868,7 +868,6 @@
                                 <div class="auth-form relative w-full max-w-md p-6 rounded-xl mx-auto">
                                     <div class="flex items-center justify-between mb-3">
                                         <h2 id="login-modal-title" class="text-lg font-semibold">Sign in</h2>
-                                        <button id="login-modal-close" class="p-1 rounded hover:bg-[#333]" aria-label="Close">&times;</button>
                                     </div>
                                     <p id="login-modal-desc" class="text-xs text-[--text-muted-dark] mb-3">Enter your email and password to sign in.</p>
                                     <div class="space-y-2">
@@ -1031,6 +1030,9 @@
                 <!-- No extra wiring needed: left column CTA removed per request -->
 
         <div id="main-content" class="flex flex-grow overflow-hidden transition-filter duration-300">
+            <div id="auth-gate-overlay" class="absolute inset-0 hidden items-center justify-center z-40 bg-black/50">
+                <div class="text-[--text-muted-dark] text-sm font-mono">Faça login para continuar…</div>
+            </div>
             <!-- PAINEL ESQUERDO -->
           <aside class="sidebar p-4 flex flex-col">
               <button id="add-prompt-btn" class="action-button nav-button primary w-full text-center font-medium">Add Prompt</button>
@@ -2602,14 +2604,27 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 window.closeLoginModal = closeLoginModal;
 
                                 // Close interactions
-                                if (closeBtn) closeBtn.addEventListener('click', closeLoginModal);
+                                if (closeBtn) {
+                                    // No "X" button anymore; keep guard if future UI adds one
+                                    closeBtn.remove();
+                                }
                                 if (modal) {
-                                    modal.addEventListener('click', (e) => {
-                                        if (e.target === modal) closeLoginModal();
+                                    modal.addEventListener('click', async (e) => {
+                                        if (e.target === modal) {
+                                            try {
+                                                const { data } = await supabaseClient.auth.getSession();
+                                                if (data?.session) closeLoginModal();
+                                            } catch {}
+                                        }
                                     });
                                 }
-                                document.addEventListener('keydown', (e) => {
-                                    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeLoginModal();
+                                document.addEventListener('keydown', async (e) => {
+                                    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                                        try {
+                                            const { data } = await supabaseClient.auth.getSession();
+                                            if (data?.session) closeLoginModal();
+                                        } catch {}
+                                    }
                                 });
 
                                                 // Toggle modes
@@ -2695,22 +2710,23 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                             } else if (evt === 'SIGNED_IN') {
                                                 // Keep auth tokens; do not clear localStorage here.
                                                 closeLoginModal();
+                                                try {
+                                                    document.getElementById('auth-gate-overlay')?.classList.add('hidden');
+                                                } catch {}
                                                 // Reload to re-init app state with session
                                                 window.location.reload();
                                             } else if (evt === 'SIGNED_OUT') {
                                                 // Persist auth gate until next sign-in
                                                 openLoginModal();
                                                 setMode('signin');
+                                                try { document.getElementById('auth-gate-overlay')?.classList.remove('hidden'); } catch {}
                                             }
                                         });
                                         // Gate on load if no active session
                                         supabaseClient.auth.getSession().then(({ data }) => {
-                                            if (data?.session) {
-                                                closeLoginModal();
-                                            } else {
-                                                openLoginModal();
-                                                setMode('signin');
-                                            }
+                                            const gate = document.getElementById('auth-gate-overlay');
+                                            if (data?.session) { closeLoginModal(); gate && gate.classList.add('hidden'); }
+                                            else { openLoginModal(); setMode('signin'); gate && gate.classList.remove('hidden'); }
                                         }).catch(() => {});
                                     } catch {}
                                 }
