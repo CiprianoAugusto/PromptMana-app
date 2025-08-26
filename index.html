@@ -2710,16 +2710,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                             } else if (evt === 'SIGNED_IN') {
                                                 // Keep auth tokens; do not clear localStorage here.
                                                 closeLoginModal();
-                                                try {
-                                                    document.getElementById('auth-gate-overlay')?.classList.add('hidden');
-                                                } catch {}
-                                                // Reload to re-init app state with session
-                                                window.location.reload();
-                                            } else if (evt === 'SIGNED_OUT') {
-                                                // Persist auth gate until next sign-in
-                                                openLoginModal();
-                                                setMode('signin');
-                                                try { document.getElementById('auth-gate-overlay')?.classList.remove('hidden'); } catch {}
+                                                try { document.getElementById('auth-gate-overlay')?.classList.add('hidden'); } catch {}
                                             }
                                         });
                                         // Gate on load if no active session
