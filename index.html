@@ -1,3 +1,4 @@
+<!-- ...existing code... -->
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -10,6 +11,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- External Libraries -->
+    <script>
+    // Carrega modelos automaticamente para todas as conexões após login/session
+    async function autoLoadAllModels() {
+        try {
+            if (typeof getLlmConnections !== 'function') return;
+            const conns = getLlmConnections();
+            if (!Array.isArray(conns) || !conns.length) return;
+            for (const conn of conns) {
+                try { await fetchModelsForConn(conn); } catch (e) { console.warn('Model load failed for', conn, e); }
+            }
+        } catch (e) { console.warn('Auto-load models failed', e); }
+    }
+    </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -973,12 +987,18 @@
                             'llm_api_active_id', 
                             'github_repo_list',
                             'github_repo_active_id',
-                            'use_proxy_mode'
+                            'use_proxy_mode',
+                            // Model UX state
+                            'promptManagerApp_llmList',
+                            'pm_blink_conn_ids'
                         ]);
                         // Also allow Supabase auth session keys
                         // supabase-js v2 stores the session under: sb-<project-ref>-auth-token
                         // Keep a regex so overrides/env changes still work.
-                        const ALLOW_REGEX = [/^sb-.+-auth-token$/];
+                        const ALLOW_REGEX = [
+                            /^sb-.+-auth-token$/,
+                            /^llm_models_cache_.+$/
+                        ];
                         const EXTRA_ALLOW = new Set([
                             // Legacy/v1 or edge cases
                             'supabase.auth.token',
@@ -2164,11 +2184,30 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
             // Feature flags / runtime toggles
             const SHOW_AUTH_PANEL = false; // Disable minimal Auth overlay by default
             const hasChartJS = typeof Chart !== 'undefined';
             // --- Minimal Auth UI (Magic Link) ---
+            // After session is ready, auto-load models for all connections
+            // Wait for Supabase client and session
+            let sessionReady = false;
+            try {
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    const { data } = await supabaseClient.auth.getSession();
+                    if (data?.session) sessionReady = true;
+                }
+            } catch {}
+            if (sessionReady) {
+                setTimeout(autoLoadAllModels, 0);
+            } else {
+                // If not logged in, try again after login
+                try {
+                    supabaseClient?.auth?.onAuthStateChange?.((event, session) => {
+                        if (session) setTimeout(autoLoadAllModels, 0);
+                    });
+                } catch {}
+            }
             (() => {
               try {
                 // Do not render the small auth panel unless explicitly enabled
@@ -3614,14 +3653,18 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (dyn.responseFormat && dyn.responseFormat !== 'text') body.response_format = { type: dyn.responseFormat };
                 // OpenAI Responses extras (only if present)
                 if (provider === 'openai') {
+                    const isGpt5Family = (() => { try { return /^gpt-5(?:$|[-_])|^gpt-5-chat$/i.test(llmId || ''); } catch { return false; } })();
                     // For Responses models, map UI fields; keep defaults off if unset
                     if (dyn.serviceTier) body.service_tier = dyn.serviceTier;
                     if (dyn.stream) body.stream = String(dyn.stream) === 'true';
                     if (dyn.background) body.background = String(dyn.background) === 'true';
                     if (dyn.reasoningEffort) body.reasoning = { effort: dyn.reasoningEffort };
-                    if (dyn.verbosity) body.verbosity = dyn.verbosity;
-                    if (dyn.minimalReasoning) body.minimal_reasoning = String(dyn.minimalReasoning) === 'true';
-                    if (dyn.cfg && String(dyn.cfg).trim()) body.cfg = dyn.cfg;
+                    // gpt-5-only
+                    if (isGpt5Family) {
+                        if (dyn.verbosity) body.verbosity = dyn.verbosity;
+                        if (dyn.minimalReasoning) body.minimal_reasoning = String(dyn.minimalReasoning) === 'true';
+                        if (dyn.cfg && String(dyn.cfg).trim()) body.cfg = dyn.cfg;
+                    }
                     if (dyn.extraArgs && String(dyn.extraArgs).trim()) {
                         try { const obj = JSON.parse(dyn.extraArgs); Object.assign(body, { extra_args: obj }); } catch {}
                     }
@@ -4204,6 +4247,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             function getDynamicSettingsSchema() {
                 const { provider, llmId, caps } = getSelectedProviderAndCaps();
+                const isGpt5Family = (() => { try { return /^gpt-5(?:$|[-_])|^gpt-5-chat$/i.test(llmId || ''); } catch { return false; } })();
                 // If unsupported modality, no editable settings
                 if (caps && caps.unsupportedReason) return [];
                 const fields = [];
@@ -4235,9 +4279,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     fields.push({ key: 'stream', type: 'select', label: 'Stream', options: ['false','true'], default: 'false' });
                     fields.push({ key: 'background', type: 'select', label: 'Background', options: ['false','true'], default: 'false' });
                     fields.push({ key: 'reasoningEffort', type: 'select', label: 'Reasoning effort', options: ['low','medium','high'], default: 'medium' });
-                    fields.push({ key: 'verbosity', type: 'select', label: 'Verbosity (gpt-5 family)', options: ['low','medium','high'], default: 'medium' });
-                    fields.push({ key: 'minimalReasoning', type: 'select', label: 'Minimal reasoning (gpt-5 family)', options: ['false','true'], default: 'false' });
-                    fields.push({ key: 'cfg', type: 'textarea', label: 'CFG grammar (optional)', default: '' });
+                    // gpt-5 family exclusive controls
+                    if (isGpt5Family) {
+                        fields.push({ key: 'verbosity', type: 'select', label: 'Verbosity (gpt-5 family)', options: ['low','medium','high'], default: 'medium' });
+                        fields.push({ key: 'minimalReasoning', type: 'select', label: 'Minimal reasoning (gpt-5 family)', options: ['false','true'], default: 'false' });
+                        fields.push({ key: 'cfg', type: 'textarea', label: 'CFG grammar (optional)', default: '' });
+                    }
                     fields.push({ key: 'extraArgs', type: 'textarea', label: 'Extra args (JSON)', default: '' });
                 }
 
@@ -4554,8 +4601,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     title: item.title,
                     content: item.content,
                     tags: Array.isArray(item.tags) ? item.tags : [],
-                    project: item.project,
-                    llm: item.llm,
+                    project: item.project || null,
+                    llm: item.llm || null,
                     status: normalizeStatus(item.status),
             date: item.date ? new Date(item.date).toISOString() : null,
             // include top_p for DB from UI topP when available
@@ -6078,26 +6125,19 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     if (caps.unsupportedReason) {
                         return new Response(`UNSUPPORTED in Run/Diagnostics (${caps.unsupportedReason})`, { status: 400 });
                     }
-                    if (provider === 'openai' && caps.preferEndpoint === 'responses') {
+                    // OpenAI must use Responses API with the specified shape
+                    if (provider === 'openai') {
                         path = 'responses';
-                    } else if (provider === 'openai' && caps.preferEndpoint === 'embeddings') {
+                        const b = caps.body || {};
+                        const inputText = (typeof b.input === 'string' && b.input) ? b.input : (Array.isArray(rawBody.messages) ? rawBody.messages.map(m => m.content).join('\n\n') : 'ping');
+                        effectiveBody = Object.assign({ model: modelId, input: inputText }, b);
+                    } else if (caps.preferEndpoint === 'embeddings' && provider !== 'openai') {
                         path = 'embeddings';
-                    }
-                    // Prepare body for chosen endpoint
-                    effectiveBody = caps.body || rawBody;
-                    if (provider === 'openai' && path === 'responses') {
-                        const inputText = (Array.isArray(effectiveBody.messages) ? effectiveBody.messages.map(m => m.content).join('\n\n') : (effectiveBody.input || '')) || 'ping';
-                        effectiveBody = { model: effectiveBody.model, input: inputText };
-                    }
-                    if (provider === 'openai' && path === 'embeddings') {
-                        const inputText = (Array.isArray(effectiveBody.messages) ? effectiveBody.messages.map(m => m.content).join('\n\n') : (effectiveBody.input || '')) || 'ping';
-                        effectiveBody = { model: effectiveBody.model, input: inputText };
-                    }
-                    if (provider === 'openai' && caps.ensureTools) {
-                        const tools = Array.isArray(effectiveBody.tools) ? effectiveBody.tools.slice(0) : [];
-                        const hasTool = tools.some(t => t?.type === caps.ensureTools);
-                        if (!hasTool) tools.push({ type: caps.ensureTools });
-                        effectiveBody.tools = tools;
+                        const b = caps.body || {};
+                        const inputText = (Array.isArray(rawBody.messages) ? rawBody.messages.map(m => m.content).join('\n\n') : (b.input || 'ping'));
+                        effectiveBody = Object.assign({ model: modelId, input: inputText }, b);
+                    } else {
+                        effectiveBody = caps.body || rawBody;
                     }
                 }
                 // Send sanitized+converted body
@@ -6116,22 +6156,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         }
                     } catch {}
                 }
-                // Endpoint guidance fallbacks for diagnostics as well (OpenAI)
-                if (!res.ok && provider === 'openai' && (res.status === 404 || res.status === 400)) {
-                    let text = '';
-                    try { text = await res.clone().text(); } catch {}
-                    if (/only supported in v1\/responses/i.test(text)) {
-                        const b = effectiveBody;
-                        const inputText = (Array.isArray(b.messages) ? b.messages.filter(m=>m.role==='user').map(m=>m.content).join('\n\n') : '') || 'ping';
-                        const respBody = { model: b.model, input: inputText };
-                        res = await llmRequest('responses', { method: 'POST', body: respBody, connId: conn?.id });
-                    } else if (/not supported in the v1\/chat\/completions endpoint\..*v1\/completions/i.test(text)) {
-                        const b = effectiveBody;
-                        const prompt = (Array.isArray(b.messages) ? b.messages.map(m => `${m.role}: ${m.content}`).join('\n') : '') || 'ping';
-                        const compBody = { model: b.model, prompt };
-                        res = await llmRequest('completions', { method: 'POST', body: compBody, connId: conn?.id });
-                    }
-                }
+                // No OpenAI endpoint switching: always use Responses API
                 return res;
             }
 
@@ -6249,11 +6274,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             return fail(r.status, t || 'Unauthorized');
                         }
                     } catch {}
-                    // 2) Minimal chat/messages probe per provider
+                    // 2) Minimal probe per provider
                     let path = 'chat/completions';
                     let body = { model: 'gpt-4o-mini', max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] };
                     let hdrs = undefined;
                     if (provider === 'xai') { body = { model: 'grok-3-mini-beta', max_tokens: 1, messages: [{ role: 'user', content: 'ping' }] }; }
+                    if (provider === 'openai') {
+                        // Use Responses API with required shape
+                        path = 'responses';
+                        body = { model: 'gpt-4o-mini', input: 'ping', stream: false, service_tier: 'auto', reasoning: 'medium' };
+                    }
                     const secondBody = (FN_VARIANTS.aiProxy === 'new')
                         ? { config_id: connId, path, method: 'POST', body, headers: hdrs }
                         : { conn_id: connId, path, method: 'POST', body, headers: hdrs };
@@ -6494,9 +6524,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             else if (prov === 'mistral') seedFromLib('mistral');
                             else if (prov === 'openai') seedFromLib('openai');
                             else if (prov === 'perplexity') seedFromLib('perplexity');
+                            else if (prov === 'deepseek') seedFromLib('deepseek');
                         } catch {}
                         renderLlmApiList();
                         try { populateServerSelectOptions(); } catch {}
+                        // Visually hint that you should load models for this new connection
+                        try { startBlinkForConn(connId); } catch {}
                         // Load/seed models for this connection and show them immediately
                         try { await fetchModelsForConn(entry); stopBlinkForConn(connId); } catch {}
                         // Ensure the Models section is visible and refreshed
@@ -6755,13 +6788,63 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const allowed = (caps && caps.allowed) || ['model','messages','max_tokens','temperature','top_p','stop','stream'];
                     Object.keys(out).forEach(k => { if (!allowed.includes(k)) delete out[k]; });
                 } else if (provider === 'openai') {
-                    // Default OpenAI chat-compatible knobs; may be narrowed by caps
-                    // Include embeddings/responses specific knobs to avoid stripping when we later switch endpoint
-                    const defaultAllowed = ['model','messages','max_tokens','temperature','top_p','stop','presence_penalty','frequency_penalty','seed','response_format','stream','input','dimensions','encoding_format','user','max_output_tokens','service_tier','reasoning','background','verbosity','minimal_reasoning','extra_args','cfg'];
-                    let allowed = defaultAllowed;
-                    if (caps && Array.isArray(caps.allowed)) allowed = caps.allowed;
-                    if (caps && Array.isArray(caps.drop)) caps.drop.forEach(k => { if (k in out) delete out[k]; });
-                    Object.keys(out).forEach(k => { if (!allowed.includes(k)) delete out[k]; });
+                    // Force Responses API with strict parameter set per spec
+                    const m = (model || out.model || '').toString();
+                    // Build input from messages/prompt if input not provided
+                    if (typeof out.input === 'undefined') {
+                        let inputText = '';
+                        try {
+                            if (Array.isArray(out.messages)) {
+                                inputText = out.messages.map(m => m && m.content ? String(m.content) : '').filter(Boolean).join('\n\n');
+                                delete out.messages;
+                            } else if (typeof out.prompt === 'string') {
+                                inputText = out.prompt;
+                                delete out.prompt;
+                            }
+                        } catch {}
+                        out.input = (typeof out.input === 'string' && out.input.trim()) ? out.input : (inputText || '');
+                    }
+                    // Defaults
+                    // Normalize reasoning (object -> string) and default to 'medium'
+                    if (out && typeof out.reasoning === 'object' && out.reasoning && typeof out.reasoning.effort === 'string') {
+                        out.reasoning = out.reasoning.effort;
+                    }
+                    if (typeof out.reasoning === 'undefined' || !out.reasoning) out.reasoning = 'medium';
+                    if (typeof out.service_tier === 'undefined') out.service_tier = 'auto';
+                    if (typeof out.stream === 'undefined') out.stream = false;
+                    // Clamp sampling knobs to valid ranges
+                    if (typeof out.temperature === 'number') {
+                        if (out.temperature < 0) out.temperature = 0; else if (out.temperature > 2) out.temperature = 2;
+                    }
+                    if (typeof out.top_p === 'number') {
+                        if (out.top_p < 0) out.top_p = 0; else if (out.top_p > 1) out.top_p = 1;
+                    }
+                    // gpt-5 family extras and defaults
+                    const isGpt5 = /^gpt-5(?:$|[-_])|^gpt-5-chat$/.test(m);
+                    if (isGpt5 && typeof out.verbosity === 'undefined') out.verbosity = 'medium';
+                    // Only include background if explicitly true
+                    if (!out.background) delete out.background;
+                    // Only include max_output_tokens if explicitly provided (number); clamp to [20, 300000]
+                    if (typeof out.max_output_tokens !== 'number') {
+                        delete out.max_output_tokens;
+                    } else {
+                        if (out.max_output_tokens < 20) out.max_output_tokens = 20;
+                        if (out.max_output_tokens > 300000) out.max_output_tokens = 300000;
+                    }
+                    // Merge extra_args into the top-level and drop the container to avoid unknown-field errors
+                    if (out.extra_args && typeof out.extra_args === 'object' && !Array.isArray(out.extra_args)) {
+                        Object.entries(out.extra_args).forEach(([k, v]) => { if (!(k in out)) out[k] = v; });
+                    }
+                    delete out.extra_args;
+                    // Enforce allowed fields
+                    const allowed = new Set([
+                        'model','input','temperature','top_p','max_output_tokens','reasoning','stream','background','service_tier',
+                        // gpt-5 family
+                        ...(isGpt5 ? ['verbosity','cfg','minimal_reasoning'] : []),
+                    ]);
+                    Object.keys(out).forEach(k => { if (!allowed.has(k)) delete out[k]; });
+                    // Prefer Responses API for all OpenAI chat/generate traffic
+                    return { body: out, preferEndpoint: 'responses', unsupportedReason: caps.unsupportedReason, ensureTools: undefined };
                 } else if (provider === 'cohere') {
                     // Cohere generate/messages style; map OpenAI-ish fields
                     // Drop OpenAI-only penalties/seed/response_format/dimensions
@@ -6920,7 +7003,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         } else {
                             res = await fetch(baseFn + '/proxy-llm', { method: 'POST', headers: headersFn, body: JSON.stringify({ conn_id: conn.id, path: 'models', method: 'GET' }) });
                         }
-                        if (!res.ok) throw new Error('models request failed');
+                        if (!res.ok) {
+                            // Surface unauthorized to prompt login
+                            if (res.status === 401 || res.status === 403) {
+                                try { const txt = await res.text(); } catch {}
+                                try { window.openLoginModal && window.openLoginModal(); } catch {}
+                                throw new Error('unauthorized');
+                            }
+                            throw new Error('models request failed');
+                        }
                         const data = await res.json();
                         items = (data.data || data.models || data) || [];
                     } else {
@@ -6978,6 +7069,25 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 if (typeof renderLlmListDrawer === 'function') renderLlmListDrawer();
                             } catch {}
                             // keep lists coherent
+                            syncLlmListWithConnections();
+                            return ids;
+                        } else if (prov === 'deepseek') {
+                            // DeepSeek: static known ids if listing isn't available
+                            const ids = [
+                                'deepseek-chat',
+                                'deepseek-reasoner'
+                            ];
+                            setModelsCache(conn.id, ids);
+                            persistAllModelCachesToServer();
+                            try {
+                                const label = `${prov} — ${getConnLabel(conn)}`;
+                                llmList = llmList || {};
+                                llmList[label] = ids;
+                                if (typeof saveLlmListToStorage === 'function') saveLlmListToStorage();
+                                if (typeof updateGlobalList === 'function') { try { updateGlobalList('llm_list', llmList); } catch {} }
+                                if (typeof populateLlmSelect === 'function') populateLlmSelect();
+                                if (typeof renderLlmListDrawer === 'function') renderLlmListDrawer();
+                            } catch {}
                             syncLlmListWithConnections();
                             return ids;
                         } else if (prov === 'anthropic') {
@@ -8144,8 +8254,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const topP = dyn.topP ?? 0.9;
                 const effort = dyn.effort !== undefined ? effortLevels[dyn.effort] || 'Medium' : (effortLevels[1]);
 
-                if (!project || !title || !content || !llm) {
-                    showValidationAlert('Project, Title, Content, and Target LLM are required fields.');
+                // Only Title and Content are required to save a prompt; Project and LLM are optional
+                if (!title || !content) {
+                    showValidationAlert('Title and Content are required fields.');
                     return;
                 }
 
@@ -9837,7 +9948,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (dyn.effort !== undefined) promptToUpdate.effort = effortLevels[dyn.effort] || promptToUpdate.effort;
                 promptToUpdate.modelSettings = dyn;
 
-                await upsertItem('prompts', mapPromptUIToDb(promptToUpdate)); // Salva no Supabase
+                // Require only Title and Content when saving changes
+                if (!promptToUpdate.title || !promptToUpdate.content) {
+                    showValidationAlert('Title and Content are required fields.');
+                    return;
+                }
+
+                await upsertItem('prompts', mapPromptUIToDb(promptToUpdate)); // Save to Supabase
 
                 prompts[promptIndex] = promptToUpdate; // Atualiza o estado local
                 renderVersionsList();
