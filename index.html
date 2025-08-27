@@ -119,6 +119,8 @@
     [data-theme="light"] .nav-map-tag { background-color: #f0efe6; }
     [data-theme="light"] .status-selector { background-color: #f0efe6; border-color: var(--border-dark); }
     [data-theme="light"] .gallery-card:hover { box-shadow: 0 8px 14px -6px rgba(155, 48, 237, 0.12), 0 3px 5px -3px rgba(155, 48, 237, 0.08); }
+    /* Light mode: theme switch rail must be visible over page background */
+    [data-theme="light"] .theme-rail { background-color: #e6e3d7 !important; /* slightly darker than body */ }
         /* Node Flow canvas grid on light */
         [data-theme="light"] #node-flow-canvas {
             background-color: #f9f9f4;
@@ -239,15 +241,15 @@
         html, body { height: 100%; overflow: hidden; }
         body { background-color: var(--bg-dark); color: var(--text-dark); font-family: 'Inter', sans-serif; }
         #root { height: 100vh; }
-        .sidebar { width: 320px; min-width: 320px; background-color: var(--card-bg-dark); border-right: 1px solid var(--border-dark); }
-        .action-panel { width: 320px; min-width: 320px; background-color: var(--card-bg-dark); border-left: 1px solid var(--border-dark); }
+    .sidebar { width: 256px; min-width: 256px; background-color: var(--card-bg-dark); border-right: 1px solid var(--border-dark); }
+    .action-panel { width: 256px; min-width: 256px; background-color: var(--card-bg-dark); border-left: 1px solid var(--border-dark); }
         .main-editor-area { background-color: var(--bg-dark); }
         .editor-window { background-color: var(--card-bg-dark); border: 1px solid var(--border-dark); border-radius: 0.75rem; }
     .form-input, .llm-select { background-color: transparent; border: 0; color: var(--text-dark); }
         .form-input::placeholder { color: var(--text-muted-dark); }
     .form-input:focus, .llm-select:focus { outline: none; box-shadow: none; }
         
-    .action-button { background-color: transparent; border: 1px solid var(--border-dark); font-size: 0.875rem; padding: 6px 12px; border-radius: 0.5rem; transition: background-color 0.2s, border-color 0.2s; }
+    .action-button { background-color: transparent; border: 1px solid var(--border-dark); font-size: 0.75rem; padding: 4px 8px; border-radius: 0.5rem; transition: background-color 0.2s, border-color 0.2s; }
     .action-button:hover { background-color: #333333; border-color: #444444; }
     /* Panels that previously used hardcoded bg should follow theme */
     .diff-view { background-color: var(--panel-bg); }
@@ -290,7 +292,7 @@
 
     /* Ensure drawer never overflows viewport */
     #config-drawer {
-        width: 320px; /* default to match sidebar */
+        width: 256px; /* default to match sidebar */
         max-width: calc(100vw - 56px); /* viewport minus dock(48px) and 8px breathing room */
     }
     /* Normalize select height */
@@ -298,7 +300,7 @@
     /* Ensure internal text alignment */
     .form-control.compact-field { font-size: 0.875rem; }
     /* Consistent (slightly slimmer) height for left/right menu buttons */
-    .nav-button { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+    .nav-button { padding-top: 0.25rem; padding-bottom: 0.25rem; }
     /* Sidebar section separator spacing for clearer grouping */
     .section-sep { margin: 24px 0; }
         
@@ -306,6 +308,12 @@
         .prompt-group-header:hover { background-color: #333333; }
         .prompt-group-header .toggle-icon { margin-right: 8px; transition: transform 0.2s; color: var(--text-muted-dark); }
         .prompt-group-header.expanded .toggle-icon { transform: rotate(90deg); }
+    /* Run Prompt preview toggles */
+    .req-preview { background-color: var(--panel-bg); color: var(--text-muted-dark); }
+    .req-preview.active { background-color: var(--accent-fuchsia); color: #fff; border-color: var(--accent-fuchsia-hover); }
+    .req-preview:not(.active):hover { background-color: #333333; color: var(--text-dark); }
+    /* Normalize small icon buttons (hit area and alignment) */
+    #toggle-syntax-highlighting { line-height: 0; }
 
         .version-sub-list { padding-left: 12px; display: none; }
         .version-sub-list.expanded { display: block; }
@@ -313,9 +321,54 @@
         .version-item:hover { background-color: #333333; }
         .version-item.selected { background-color: var(--accent-fuchsia); color: white; }
         .version-item.selected .text-gray-400, .version-item.selected .text-gray-500 { color: white; }
+        /* Light mode: selected version uses a lighter fuchsia to avoid visual collision with the checkbox */
+        [data-theme="light"] .version-item.selected {
+            background-color: rgba(155, 48, 237, 0.30); /* ~30% */
+            color: var(--text-dark);
+        }
+        [data-theme="light"] .version-item.selected .text-gray-400,
+        [data-theme="light"] .version-item.selected .text-gray-500 { color: var(--text-dark); }
+        /* Branded checkbox (used in Versions list) */
+        .pm-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 16px; height: 16px; display: inline-block; position: relative;
+            border-radius: 4px; cursor: pointer; outline: none; flex-shrink: 0;
+            background-color: transparent; border: 1px solid var(--border-dark);
+            transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+        /* Default (dark mode): mint box with dark checkmark */
+        .pm-checkbox:hover { background-color: rgba(16, 185, 129, 0.12); }
+        .pm-checkbox:focus { box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25); border-color: var(--accent-mint); }
+        .pm-checkbox:checked {
+            background-color: var(--accent-mint); border-color: var(--accent-mint);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M4 9l2.5 2.5L12 6" fill="none" stroke="%231a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+            background-repeat: no-repeat; background-position: center; background-size: 12px 12px;
+        }
+        /* Light mode: fuchsia box with white checkmark */
+        [data-theme="light"] .pm-checkbox:hover { background-color: rgba(155, 48, 237, 0.10); }
+        [data-theme="light"] .pm-checkbox:focus { box-shadow: 0 0 0 3px rgba(155, 48, 237, 0.25); border-color: var(--accent-fuchsia-hover); }
+        [data-theme="light"] .pm-checkbox:checked {
+            background-color: var(--accent-fuchsia); border-color: var(--accent-fuchsia-hover);
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path d="M4 9l2.5 2.5L12 6" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+            background-repeat: no-repeat; background-position: center; background-size: 12px 12px;
+        }
+        /* Light mode readability for version labels */
+        [data-theme="light"] #versions-history-list .text-white { color: var(--text-dark) !important; }
+        [data-theme="light"] #versions-history-list .text-gray-400 { color: var(--text-muted-dark) !important; }
+        [data-theme="light"] .version-item:hover { background-color: #eeeedd; }
 
         .status-selector { background-color: #333333; border: 1px solid var(--border-dark); }
-        .status-option { border-right: 1px solid var(--border-dark); color: var(--text-muted-dark); transition: all 0.2s; }
+        .status-option {
+            border-right: 1px solid var(--border-dark);
+            color: var(--text-muted-dark);
+            transition: all 0.2s;
+            /* Match Kanban button height (py-1, text-xs) while keeping horizontal px-4 */
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
+            font-size: 0.75rem;
+        }
         .status-option:last-child { border-right: none; }
         .status-option:hover { color: var(--text-dark); }
         .status-option.active { background-color: var(--accent-fuchsia); color: white; font-weight: 600; }
@@ -346,6 +399,7 @@
     /* DB status pill color by state */
     #db-status-pill.online { color: var(--db-online-color); }
     #db-status-pill.offline { color: var(--db-offline-color); }
+    #db-status-pill.loading { color: var(--text-muted-dark); }
     /* API STATUS uses button color directly; old llm-status-pill removed */
 
         .modal-overlay { transition: opacity 0.3s ease; }
@@ -485,6 +539,14 @@
             stroke: var(--accent-red);
             stroke-width: 4px;
         }
+        /* Editor title: reduce font size and field height (~-20px) */
+        #prompt-title-input {
+            font-size: 1rem !important; /* override text-xl */
+            line-height: 1.25 !important;
+            padding-top: 2px !important;
+            padding-bottom: 2px !important; /* was py-2 (8px) */
+            height: 32px !important; /* compact height */
+        }
         /* Subtle blink ring to draw attention to action buttons */
         @keyframes pm-blink {
             0%, 100% { box-shadow: 0 0 0 0 rgba(119,17,197,0.0); }
@@ -565,14 +627,16 @@
         #navigation-map {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 4px; /* was 8px */
             align-items: center;
+            padding: 2px 6px !important; /* override p-2 to reduce vertical space */
         }
         .nav-map-tag {
             background-color: #333;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.75rem;
+            padding: 2px 6px; /* was 4px 10px */
+            border-radius: 3px; /* was 4px */
+            font-size: 0.6875rem; /* ~11px, was 12px */
+            line-height: 1.2;
             font-family: 'Roboto Mono', monospace;
             cursor: pointer;
             transition: background-color 0.2s;
@@ -626,32 +690,51 @@
         .drawer-row.selected { background-color: var(--accent-fuchsia); color: #fff; border-color: var(--accent-fuchsia-hover); }
         [data-theme="light"] .drawer-row:hover { background-color: #F3F4F6; }
         [data-theme="light"] .drawer-row { background-color: #fff; }
-        /* Estilos para Snippet Copy Button */
+    /* Estilos para Snippet Buttons (Copy/Save) */
         #editor-container {
+            position: relative; /* ensure absolute children are bounded */
             overflow: hidden; /* Garante que os botões não saiam da área */
         }
         #snippet-buttons-overlay {
             pointer-events: none; /* O overlay em si não é clicável */
+            inset: 0; /* ensure overlay covers editor-container */
+            box-sizing: border-box; /* align absolute children with padding box */
         }
         /* Syntax highlighting overlay mirrors textarea content */
         #syntax-overlay {
             pointer-events: none;
+            /* Match textarea wrapping behavior exactly to avoid reflow/jitter */
             white-space: pre-wrap;
-            overflow-wrap: anywhere;
+            word-break: normal;
+            overflow-wrap: normal;
+            box-sizing: border-box; /* ensure padding matches content box like textarea */
+            will-change: top; /* smoother scroll sync */
             z-index: 1;
-            /* Make overlay text transparent so only highlight backgrounds/borders are visible over textarea text */
+            /* Default to transparent so we don't double-render text when disabled */
             color: transparent;
         }
-        #syntax-overlay .hl-var {
-            background: rgba(59,130,246,0.15);
-            border-bottom: 1px dashed rgba(59,130,246,0.6);
+        /* Token styles: color the font instead of painting background overlays */
+        #syntax-overlay .hl-var { color: #3B82F6; /* blue-500 */ }
+        #syntax-overlay .hl-xml { color: #10B981; /* emerald-500 */ }
+    /* Ensure token spans inherit exact font metrics */
+    #syntax-overlay .hl-var,
+    #syntax-overlay .hl-xml { font: inherit; }
+        /* When syntax highlighting is ON, hide textarea text and show overlay text */
+        #editor-container.syntax-on #main-editor {
+            color: transparent !important;
+            /* Keep caret visible even when text is transparent */
+            caret-color: var(--accent-mint);
         }
-        #syntax-overlay .hl-xml {
-            background: rgba(16,185,129,0.15);
-            border-bottom: 1px dashed rgba(16,185,129,0.6);
+        #editor-container.syntax-on #syntax-overlay {
+            color: inherit; /* overlay text uses normal text color except where token spans override */
         }
-        .copy-snippet-btn {
-            position: absolute;
+        /* Keep overlay mounted to stabilize rendering layers; just toggle visibility */
+        #editor-container:not(.syntax-on) #syntax-overlay { visibility: hidden; opacity: 0; }
+        #editor-container.syntax-on #syntax-overlay { visibility: visible; opacity: 1; }
+    .copy-snippet-btn,
+    .save-snippet-btn {
+            /* static inside holder for proper sizing */
+            position: relative;
             pointer-events: all; /* Torna o botão clicável */
             background-color: #333;
             color: var(--text-muted-dark);
@@ -666,7 +749,20 @@
             transition: all 0.2s;
             z-index: 5; /* Garante que fique sobre o texto */
         }
-        .copy-snippet-btn:hover {
+        /* Container for copy+save buttons per snippet */
+        .snippet-btn-holder {
+            position: absolute;
+            display: flex;
+            gap: 6px;
+            z-index: 5;
+            right: 16px; /* default anchor inside editor padding */
+            max-width: calc(100% - 16px);
+            flex-wrap: nowrap;
+        }
+    /* Reduce editor font size to 12px */
+    #main-editor { font-size: 0.75rem; }
+    .copy-snippet-btn:hover,
+    .save-snippet-btn:hover {
             background-color: var(--accent-fuchsia);
             color: white;
         }
@@ -675,6 +771,8 @@
             color: white;
             border-color: #3f6212;
         }
+    [data-theme="light"] .copy-snippet-btn,
+    [data-theme="light"] .save-snippet-btn { background-color: #eeeedd; color: var(--text-muted-dark); border-color: var(--border-dark); }
         
         /* --- ESTILOS NODE FLOW --- */
         #node-flow-canvas {
@@ -682,7 +780,7 @@
             background-image:
                 radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px);
             background-size:
-                16px 16px; /* pontos */
+                16px 16px; /* dots */
             background-position:
                 0 0, 0 0, 0 0;
             overflow: hidden;
@@ -708,9 +806,9 @@
         .flow-node {
             position: absolute;
             border: 1px solid var(--border-dark);
-            background-color: var(--card-bg-dark); /* Adicionado fundo ao card */
+            background-color: var(--card-bg-dark); /* Added background to card */
             cursor: move;
-            width: 280px; /* Largura fixa para consistência */
+            width: 280px; /* Fixed width for consistency */
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             user-select: none;
             transition: border-color 0.2s;
@@ -820,10 +918,10 @@
                     </svg>
                 </button>
             </div>
-            <div class="flex items-center gap-2">
-                <button id="theme-toggle" class="action-button p-1.5" aria-label="Toggle theme" role="switch" aria-checked="false">
+            <div class="flex items-center gap-1">
+                <button id="theme-toggle" class="p-1.5" aria-label="Toggle theme" role="switch" aria-checked="false">
                     <!-- Sun/Moon switch: sun on the left, moon on the right, with a sliding thumb -->
-                    <div class="relative w-12 h-6 rounded-full bg-[--panel-bg] border border-[--border-dark] flex items-center justify-between px-1">
+                    <div class="relative w-12 h-6 rounded-full bg-[--panel-bg] flex items-center justify-between px-1 theme-rail">
                         <!-- Sun (left) -->
                         <svg id="icon-sun" class="w-3.5 h-3.5 text-[--accent-fuchsia]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m0 13.5V21m9-9h-2.25M5.25 12H3m15.364 6.364l-1.591-1.591M7.227 7.227L5.636 5.636m12.728 0l-1.591 1.591M7.227 16.773l-1.591 1.591M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
@@ -837,7 +935,7 @@
                     </div>
                 </button>
                 <!-- Inline Auth placeholder removed (replaced by static Account button) -->
-                                <div id="profile-inline" class="hidden items-center gap-2 ml-2">
+                                <div id="profile-inline" class="hidden items-center gap-1">
                                     <!-- email hidden per request -->
                                     <input id="profile-fullname" type="text" placeholder="Full name" class="form-control compact-field rounded-md text-xs w-40 hidden"/>
                                     <!-- inline Edit removed per request -->
@@ -856,12 +954,12 @@
                             <div class="auth-left relative hidden md:block">
                                 <div class="blob" aria-hidden="true"></div>
                                 <div class="absolute inset-0 flex items-center">
-                                    <div class="px-10 md:px-14 lg:px-20">
-                                        <h2 class="text-5xl md:text-6xl font-extrabold mb-10" style="color: var(--accent-fuchsia); line-height: 1.2;">
+                                    <div class="px-10 md:px-14 lg:px-20 ml-8 md:ml-12 lg:ml-20">
+                                        <h2 class="text-[2.4rem] md:text-5xl font-extrabold mb-10" style="color: var(--accent-fuchsia); line-height: 1.2;">
                                             Your prompt are spells.<br/>
                                             This is your grimore!
                                         </h2>
-                                        <p class="text-lg md:text-xl text-white">
+                                        <p class="text-[0.9rem] md:text-base text-white max-w-[40ch] md:max-w-[44ch]">
                                             PromptMana, the all-in-on platform to craft, version, test and deploy production-ready prompts. With seamless LLM and Git integration, PromptMana brings structure, security, and magic to your AI workflow.
                                         </p>
                                     </div>
@@ -870,12 +968,12 @@
                             <!-- Right: Form glass -->
                             <div class="auth-right relative flex items-center justify-center p-6">
                                 <!-- Mobile-only copy -->
-                                <div class="absolute top-0 left-0 right-0 p-6 md:hidden">
-                                    <h2 class="text-3xl font-extrabold mb-6" style="color: var(--accent-fuchsia); line-height: 1.2;">
+                                <div class="absolute top-0 left-0 right-0 p-6 pl-10 md:hidden">
+                                    <h2 class="text-2xl font-extrabold mb-6" style="color: var(--accent-fuchsia); line-height: 1.2;">
                                         Your prompt are spells.<br/>
                                         This is your grimore!
                                     </h2>
-                                    <p class="text-sm text-white mb-0">
+                                    <p class="text-[0.7rem] text-white mb-0 max-w-[28ch]">
                                         PromptMana, the all-in-on platform to craft, version, test and deploy production-ready prompts. With seamless LLM and Git integration, PromptMana brings structure, security, and magic to your AI workflow.
                                     </p>
                                 </div>
@@ -927,15 +1025,17 @@
                     <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
                         <div class="p-3 border-b border-[--border-dark] flex items-center justify-between">
                             <h2 class="text-xl font-bold">Account</h2>
-                            <button id="account-close-btn" class="p-2 rounded hover:bg-[#333]" title="Close">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button id="account-logout-btn" class="action-button text-xs">Logout</button>
+                                <button id="account-close-btn" class="p-2 rounded hover:bg-[#333]" title="Close">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
                         </div>
                         <div class="flex-1 overflow-auto p-4 grid gap-4" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
                             <!-- Profile -->
                             <div class="panel-soft p-3 rounded-md space-y-3">
                                 <h3 class="font-semibold text-sm">Profile</h3>
-                                <!-- Email field removed per request -->
                                 <div class="grid gap-2 text-sm">
                                     <label class="text-[--text-muted-dark]">Full name</label>
                                     <div class="flex gap-2">
@@ -943,6 +1043,10 @@
                                         <button id="account-save-name" class="action-button text-xs">Save</button>
                                     </div>
                                     <span id="account-name-status" class="text-[10px] font-mono text-[--text-muted-dark]"></span>
+                                </div>
+                                <div class="grid gap-2 text-sm">
+                                    <label class="text-[--text-muted-dark]">Email</label>
+                                    <input id="account-email" class="form-control rounded-md py-1.5 px-3" placeholder="user@example.com" disabled />
                                 </div>
                                 <div class="grid gap-2 text-sm">
                                     <label class="text-[--text-muted-dark]">Change password</label>
@@ -976,79 +1080,24 @@
                     </div>
                 </div>
 
-                <!-- Security: Cloud-only data (guard localStorage to UI-only keys)
-                     Important: allow Supabase auth keys so session persists. -->
+                <!-- Security: Cloud-only data (disable localStorage for app data, but keep Supabase auth tokens) -->
                 <script>
                     (function() {
-                        // UI-only keys we control
-                        const LS_ALLOW = new Set([
-                            'pm_theme',
-                            'llm_api_list',
-                            'llm_api_active_id', 
-                            'github_repo_list',
-                            'github_repo_active_id',
-                            'use_proxy_mode',
-                            // Model UX state
-                            'promptManagerApp_llmList',
-                            'pm_blink_conn_ids'
-                        ]);
-                        // Also allow Supabase auth session keys
-                        // supabase-js v2 stores the session under: sb-<project-ref>-auth-token
-                        // Keep a regex so overrides/env changes still work.
-                        const ALLOW_REGEX = [
-                            /^sb-.+-auth-token$/,
-                            /^llm_models_cache_.+$/
-                        ];
-                        const EXTRA_ALLOW = new Set([
-                            // Legacy/v1 or edge cases
-                            'supabase.auth.token',
-                        ]);
-                        const isAllowedKey = (k) => {
-                            try {
-                                if (LS_ALLOW.has(k) || EXTRA_ALLOW.has(k)) return true;
-                                return ALLOW_REGEX.some((re) => re.test(k));
-                            } catch { return false; }
-                        };
-                        const orig = {
-                            getItem: localStorage.getItem.bind(localStorage),
-                            setItem: localStorage.setItem.bind(localStorage),
-                            removeItem: localStorage.removeItem.bind(localStorage),
-                            clear: localStorage.clear.bind(localStorage),
-                            key: localStorage.key ? localStorage.key.bind(localStorage) : null,
-                            length: Object.getOwnPropertyDescriptor(Object.getPrototypeOf(localStorage) || {}, 'length')
-                        };
-                        // Expose originals for intentional admin cleanup
-                        window.__ls_orig = orig;
-
-                        localStorage.getItem = (k) => (isAllowedKey(k) ? orig.getItem(k) : null);
-                        localStorage.setItem = (k, v) => { if (isAllowedKey(k)) orig.setItem(k, v); };
-                        localStorage.removeItem = (k) => { if (isAllowedKey(k)) orig.removeItem(k); };
-                        localStorage.clear = () => {
-                            try {
-                                // Remove everything except allowed keys (iterate via native key/length)
-                                const keys = [];
-                                const len = typeof localStorage.length === 'number' ? localStorage.length : 0;
-                                for (let i = 0; i < len; i++) {
-                                    const key = orig.key ? orig.key(i) : null;
-                                    if (key) keys.push(key);
-                                }
-                                keys.forEach(k => { if (!isAllowedKey(k)) orig.removeItem(k); });
-                            } catch (_) {
-                                // Fallback: attempt common app keys wipe
-                                const COMMON_KEYS = [
-                                    'PROMPTS_STORAGE_KEY','TEMPLATES_STORAGE_KEY','INPUT_GALLERY_STORAGE_KEY','NODE_FLOWS_STORAGE_KEY',
-                                    'XML_TAGS_STORAGE_KEY','VAR_LIBRARY_STORAGE_KEY','LLM_LIST_STORAGE_KEY','PROJECTS_STORAGE_KEY',
-                                    'PROJECT_REPO_MAP_STORAGE_KEY','GENERAL_TAGS_LIB_KEY','github_repo_list','llm_multi','llm_active',
-                                    'gh_multi','gh_active','gh_repo'
-                                ];
-                                COMMON_KEYS.forEach(k => { try { if (!isAllowedKey(k)) orig.removeItem(k); } catch {} });
-                            }
-                        };
-
-                        // One-time purge of legacy keys on load
-                        try { localStorage.clear(); } catch {}
-                        // Add a global helper to purge again after auth
-                        window.clearAppLocalData = function() { try { localStorage.clear(); } catch {} };
+                        try {
+                            const ORIG = {
+                                getItem: localStorage.getItem.bind(localStorage),
+                                setItem: localStorage.setItem.bind(localStorage),
+                                removeItem: localStorage.removeItem.bind(localStorage),
+                                clear: localStorage.clear.bind(localStorage)
+                            };
+                            const isSupabaseKey = (k) => typeof k === 'string' && (/^(sb-)/.test(k) || k.includes('supabase'));
+                            const noop = function(){};
+                            localStorage.getItem = function(k){ return isSupabaseKey(k) ? ORIG.getItem(k) : null; };
+                            localStorage.setItem = function(k,v){ if (isSupabaseKey(k)) { try { ORIG.setItem(k,v); } catch {} } };
+                            localStorage.removeItem = function(k){ if (isSupabaseKey(k)) { try { ORIG.removeItem(k); } catch {} } };
+                            localStorage.clear = noop;
+                            window.clearAppLocalData = noop;
+                        } catch {}
                     })();
                 </script>
                 <!-- No extra wiring needed: left column CTA removed per request -->
@@ -1275,12 +1324,12 @@
 
                 <div class="editor-window flex-grow flex flex-col">
                     <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
-                        <div class="flex items-center flex-grow gap-2">
-                            <input id="prompt-title-input" placeholder="Your prompt title..." class="form-input font-mono w-full px-2 py-2 text-2xl font-medium">
-                            <button id="toggle-syntax-highlighting" class="action-button p-1.5" aria-label="Toggle syntax highlighting" role="switch" aria-checked="false" title="Syntax highlighting">
-                                <span id="syntax-switch-label" class="font-mono text-xs tracking-tight">&lt;/&gt;</span>
+                        <div class="flex items-center flex-grow gap-1">
+                            <input id="prompt-title-input" placeholder="Your prompt title..." class="form-input font-mono w-full px-2 py-2 text-xl font-medium">
+                            <button id="toggle-syntax-highlighting" class="inline-flex items-center justify-center w-8 h-8 p-2 rounded-md text-[--text-muted-dark] hover:text-white hover:bg-[#333]" aria-label="Toggle syntax highlighting" role="switch" aria-checked="false" title="Syntax highlighting">
+                                <span id="syntax-switch-label" class="font-mono text-xs tracking-tight leading-none select-none">&lt;/&gt;</span>
                             </button>
-                            <button id="copy-prompt-btn" title="Copy prompt content" class="ml-2 p-2 rounded-md text-[--text-muted-dark] hover:text-white hover:bg-[#333]">
+                            <button id="copy-prompt-btn" title="Copy prompt content" class="p-2 rounded-md text-[--text-muted-dark] hover:text-white hover:bg-[#333]">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                             </button>
                         </div>
@@ -1314,15 +1363,14 @@
                     <div class="flex-grow p-1 relative" id="editor-container">
                         <textarea id="main-editor" placeholder="Have a new big idea to change the world with your prompt? 
 Write, right here, right now. Show me your mana!" class="form-input font-mono w-full h-full p-4 text-base leading-relaxed resize-none"></textarea>
-                        <div id="syntax-overlay" class="absolute top-0 left-0 w-full h-full p-4 pointer-events-none hidden"></div>
+                        <div id="syntax-overlay" class="absolute top-0 left-0 w-full h-full p-4 pointer-events-none"></div>
                         <div id="snippet-buttons-overlay" class="absolute top-0 left-0 w-full h-full p-4 pointer-events-none"></div>
                     </div>
-                    <!-- Chat Assistant (above Dependence) -->
+                    <!-- Chat Assistant (above Dependency) -->
                     <div id="chat-assistant-bar" class="p-2 border-t border-[--border-dark]">
                         <div class="flex items-center justify-between gap-3 mb-2">
                             <div class="flex items-center gap-2 flex-wrap">
                                 <span class="text-xs font-bold text-[--text-muted-dark]">Chat Assistant</span>
-                                <select id="chat-model-select" class="form-control text-xs rounded-md py-1 px-2 min-w-[220px]"></select>
                             </div>
                             <div class="flex items-center gap-2">
                                 <button id="clear-chat-btn" class="action-button text-xs">Clear</button>
@@ -1330,30 +1378,36 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         </div>
                         <div id="chat-messages" class="max-h-56 overflow-y-auto rounded-md border border-[--border-dark] p-2 space-y-2 bg-[--card-bg-dark]"></div>
                         <div class="mt-2 flex items-center gap-2">
-                            <textarea id="chat-input" rows="2" placeholder="Ask something to help craft your prompt..." class="form-input font-sans w-full p-2 text-sm leading-relaxed resize-none rounded-md" style="background-color: var(--input-bg);"></textarea>
+                            <textarea id="chat-input" rows="1" placeholder="Ask something to help craft your prompt..." class="form-input font-sans w-full p-2 text-sm leading-relaxed resize-none rounded-md" style="background-color: var(--input-bg);"></textarea>
                             <button id="send-chat-btn" class="action-button primary text-xs whitespace-nowrap h-fit self-end">Send</button>
                         </div>
                     </div>
                     <!-- Dependency Bar -->
-                    <div id="dependency-bar" class="p-2 border-t border-[--border-dark]">
+                    <div id="dependency-bar" class="p-2 border-t border-[--border-dark] relative">
                         <div class="flex items-center justify-between gap-3">
+                            <!-- Left half: Dependency tags and Manage -->
                             <div class="flex items-center gap-2 flex-wrap">
-                                <span class="text-xs font-bold text-[--text-muted-dark]">Dependence</span>
+                                <span class="text-xs font-bold text-[--text-muted-dark]">Dependency</span>
                                 <div id="dependency-tag-container" class="flex items-center gap-2 flex-wrap"></div>
-                            </div>
-                            <div class="relative" id="dependencies-popover">
-                                <button id="edit-dependencies-btn" class="action-button text-xs">Manage</button>
-                                <!-- Larger popover for dependencies management (opens upwards) -->
-                                <div id="dependencies-dropdown" class="hidden absolute right-0 bottom-full mb-2 bg-[--card-bg-dark] border border-[--border-dark] rounded-md shadow-xl w-[640px] max-w-[90vw] z-50">
-                                    <div class="p-2 border-b border-[--border-dark]">
-                                        <input id="dependencies-search" type="text" placeholder="Search prompt..." class="form-control w-full rounded-md py-1.5 px-3 text-sm">
-                                    </div>
-                                    <div id="dependencies-list" class="max-h-96 overflow-y-auto"></div>
-                                    <div class="p-2 border-t border-[--border-dark] flex justify-end gap-2">
-                                        <button id="deps-cancel-btn" class="action-button text-xs">Cancel</button>
-                                        <button id="deps-apply-btn" class="action-button primary text-xs">Apply</button>
+                                <div id="dependencies-popover">
+                                    <button id="edit-dependencies-btn" class="action-button text-xs">Manage</button>
+                                    <!-- Larger popover for dependencies management (opens upwards) -->
+                                    <div id="dependencies-dropdown" class="hidden absolute bg-[--card-bg-dark] border border-[--border-dark] rounded-md shadow-xl w-[640px] max-w-[90vw] z-50">
+                                        <div class="p-2 border-b border-[--border-dark]">
+                                            <input id="dependencies-search" type="text" placeholder="Search prompt..." class="form-control w-full rounded-md py-1.5 px-3 text-sm">
+                                        </div>
+                                        <div id="dependencies-list" class="max-h-96 overflow-y-auto"></div>
+                                        <div class="p-2 border-t border-[--border-dark] flex justify-end gap-2">
+                                            <button id="deps-cancel-btn" class="action-button text-xs">Cancel</button>
+                                            <button id="deps-apply-btn" class="action-button primary text-xs">Apply</button>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
+                            <!-- Right half: Chat Assistant model selector -->
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="text-xs font-bold text-[--text-muted-dark]">Assistant Model</span>
+                                <select id="chat-model-select" class="form-control text-xs rounded-md py-1 px-2 min-w-[220px]"></select>
                             </div>
                         </div>
                     </div>
@@ -1378,11 +1432,11 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                                 </svg>
                                                         </button>
                                                         <div class="status-selector flex rounded-lg overflow-hidden">
-                                <button class="status-option px-4 py-1.5 text-sm" data-status="idea">Idea</button>
-                                <button class="status-option px-4 py-1.5 text-sm" data-status="write">Write</button>
-                                <button class="status-option px-4 py-1.5 text-sm" data-status="test">Test</button>
-                                <button class="status-option px-4 py-1.5 text-sm" data-status="ready">Ready</button>
-                                <button class="status-option px-4 py-1.5 text-sm" data-status="archive">Archive</button>
+                                <button class="status-option px-4" data-status="idea">Idea</button>
+                                <button class="status-option px-4" data-status="write">Write</button>
+                                <button class="status-option px-4" data-status="test">Test</button>
+                                <button class="status-option px-4" data-status="ready">Ready</button>
+                                <button class="status-option px-4" data-status="archive">Archive</button>
                             </div>
                         </div>
                          <div id="editor-stats" class="text-xs font-mono pr-4">0 tokens / 0 words / 0 characters</div>
@@ -1394,17 +1448,17 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             <aside class="action-panel p-4 flex flex-col">
                 <div class="flex flex-col flex-grow overflow-hidden">
                     <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-base font-semibold">Versions</h2>
+                        <h2 class="text-sm font-semibold">Versions</h2>
                         <button id="compare-versions-btn" class="action-button text-xs" disabled>Compare</button>
                     </div>
 
                     <div id="filters-container" class="space-y-3 mb-3 flex-shrink-0">
                         <div class="relative">
-                            <input id="search-versions-input" placeholder="Search by title, project or #tag..." class="form-control w-full rounded-md py-1.5 px-3 text-sm focus:ring-2">
+                            <input id="search-versions-input" placeholder="Search by title, project or tag..." class="form-control w-full rounded-md py-1.5 px-3 text-sm focus:ring-2">
                         </div>
-                        <div id="status-filter-container" class="flex items-center gap-2">
-                            <label for="status-filter-select" class="text-xs font-medium text-[--text-muted-dark] whitespace-nowrap">Filter by Status</label>
-                            <select id="status-filter-select" class="form-control text-xs rounded-md py-1 px-2 min-w-[160px]">
+                        <div id="status-filter-container" class="flex flex-col gap-1">
+                            <label for="status-filter-select" class="text-xs font-medium text-[--text-muted-dark]">Filter by Status</label>
+                            <select id="status-filter-select" class="form-control text-xs rounded-md py-1 px-2 w-full">
                                 <option value="all">All</option>
                                 <option value="idea">Idea</option>
                                 <option value="write">Write</option>
@@ -1412,6 +1466,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 <option value="ready">Ready</option>
                                 <option value="archive">Archive</option>
                             </select>
+                        </div>
+                        <div id="project-filter-container" class="flex flex-col gap-1">
+                            <label for="project-filter-select" class="text-xs font-medium text-[--text-muted-dark]">Filter by Project</label>
+                            <select id="project-filter-select" class="form-control text-xs rounded-md py-1 px-2 w-full"></select>
                         </div>
                     </div>
 
@@ -1515,8 +1573,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         <div class="flex items-center gap-2">
                             <div class="flex items-center gap-1 text-[10px] text-[--text-muted-dark]">
                                 <span>Preview:</span>
-                                <button id="req-toggle-full" class="px-2 py-0.5 border border-[--border-dark] rounded-md bg-[--panel-bg]">Full Request</button>
-                                <button id="req-toggle-only" class="px-2 py-0.5 border border-[--border-dark] rounded-md">Only Prompt</button>
+                                <button id="req-toggle-full" class="px-2 py-0.5 border border-[--border-dark] rounded-md bg-[--panel-bg] req-preview active">Full Request</button>
+                                <button id="req-toggle-only" class="px-2 py-0.5 border border-[--border-dark] rounded-md req-preview">Only Prompt</button>
                             </div>
                             <button id="copy-run-request-btn" class="action-button text-xs">Copy</button>
                         </div>
@@ -1891,15 +1949,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
     <!-- Modal Visualizador de Comentários -->
     <div id="comments-viewer-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
-    <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
-            <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
-                <h2 id="comments-viewer-title" class="text-xl font-bold">Comments</h2>
+        <div class="bg-[--card-bg-dark] max-w-md w-full max-h-[70vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+            <div class="p-3 border-b border-[--border-dark] flex justify-between items-center">
+                <h2 id="comments-viewer-title" class="text-lg font-bold">Comments</h2>
                 <button id="close-comments-viewer-btn" class="p-2 rounded-full hover:bg-[#333]">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="p-6 overflow-y-auto">
-                <div class="panel-soft p-4">
+            <div class="p-4 overflow-y-auto">
+                <div class="panel-soft p-3">
                     <pre id="comments-viewer-content" class="text-sm font-sans whitespace-pre-wrap leading-relaxed"></pre>
                 </div>
             </div>
@@ -2181,6 +2239,19 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
         </div>
     </div>
 
+    <!-- Modal: Node Prompt Viewer -->
+    <div id="node-prompt-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-6">
+        <div class="bg-[--card-bg-dark] w-[80vw] h-[70vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+            <div class="p-3 border-b border-[--border-dark] flex items-center justify-between">
+                <h3 id="node-prompt-title" class="text-lg font-bold">Prompt</h3>
+                <div class="flex items-center gap-2">
+                    <button id="close-node-prompt-btn" class="p-2 rounded hover:bg-[#333]" title="Close">&times;</button>
+                </div>
+            </div>
+            <pre id="node-prompt-content" class="flex-1 overflow-auto p-3 font-mono text-sm whitespace-pre-wrap"></pre>
+        </div>
+    </div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
@@ -2275,25 +2346,27 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const status = panel.querySelector('#auth-status-label');
 
                 async function refreshAuthUI() {
-                  try {
-                    const { data } = await supabaseClient.auth.getUser();
-                    const user = data?.user;
-                    if (user) {
-                      // Logged in: show status + Sign out; hide email + send
-                      if (emailInput) emailInput.style.display = 'none';
-                      if (sendBtn) sendBtn.style.display = 'none';
-                      if (signOutBtn) signOutBtn.style.display = '';
-                      if (status) status.textContent = user.email ? `Logado: ${user.email}` : 'Logado';
-                    } else {
-                      // Logged out: show email + send; hide Sign out
-                      if (emailInput) emailInput.style.display = '';
-                      if (sendBtn) sendBtn.style.display = '';
-                      if (signOutBtn) signOutBtn.style.display = 'none';
-                      if (status) status.textContent = '';
-                    }
-                  } catch (e) {
-                    if (status) status.textContent = '';
-                  }
+                                    try {
+                                        const { data } = await supabaseClient.auth.getUser();
+                                        const user = data?.user;
+                                        if (user) {
+                                            // Logged in: show status + Sign out; hide email + send
+                                            if (emailInput) emailInput.style.display = 'none';
+                                            if (sendBtn) sendBtn.style.display = 'none';
+                                            if (signOutBtn) signOutBtn.style.display = '';
+                                            if (status) status.textContent = user.email ? `Logado: ${user.email}` : 'Logado';
+                                            // Carrega prompts do Supabase ao logar
+                                            loadDataFromSupabase();
+                                        } else {
+                                            // Logged out: show email + send; hide Sign out
+                                            if (emailInput) emailInput.style.display = '';
+                                            if (sendBtn) sendBtn.style.display = '';
+                                            if (signOutBtn) signOutBtn.style.display = 'none';
+                                            if (status) status.textContent = '';
+                                        }
+                                    } catch (e) {
+                                        if (status) status.textContent = '';
+                                    }
                 }
 
                 if (sendBtn) {
@@ -2314,14 +2387,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                   });
                 }
 
-                if (signOutBtn) {
-                  signOutBtn.addEventListener('click', async () => {
-                    try {
-                      await supabaseClient.auth.signOut();
-                      await refreshAuthUI();
-                    } catch {}
-                  });
-                }
+                                if (signOutBtn) {
+                                    signOutBtn.addEventListener('click', async () => {
+                                        try {
+                                            await supabaseClient.auth.signOut();
+                                            await refreshAuthUI();
+                                            try { window.openLoginModal && window.openLoginModal(); window.setMode && window.setMode('signin'); } catch {}
+                                        } catch {}
+                                    });
+                                }
 
                 try {
                   // Keep UI in sync with auth changes
@@ -2542,8 +2616,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             if (!__ALLOW_OVERRIDE) return '';
             try { return __qs.get('supabase_key') || (typeof window !== 'undefined' ? (window.__SUPABASE_ANON_KEY || '') : ''); } catch { return ''; }
         })();
-        const FINAL_SUPABASE_URL = (__urlOverride && __urlOverride.trim()) || SUPABASE_URL;
-        const FINAL_SUPABASE_KEY = (__keyOverride && __keyOverride.trim()) || SUPABASE_ANON_KEY;
+    const FINAL_SUPABASE_URL = (__urlOverride && __urlOverride.trim()) || SUPABASE_URL;
+    const FINAL_SUPABASE_KEY = (__keyOverride && __keyOverride.trim()) || SUPABASE_ANON_KEY;
 
                         let supabaseClient = null;
             let dbOnline = false;
@@ -2553,14 +2627,51 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 } else if (window.supabase && typeof window.supabase.createClient === 'function') {
                     const { createClient } = window.supabase;
                     supabaseClient = createClient(FINAL_SUPABASE_URL, FINAL_SUPABASE_KEY);
+                    // expose globally for unified access across modules/handlers
+                    try { window.supabaseClient = supabaseClient; } catch {}
                     dbOnline = true;
+                    // Initialize DB status as loading; will switch to Online after data is loaded
+                    setDbStatusLoading(0);
                 } else {
                     console.warn('Supabase SDK not available. Running in offline mode.');
+                    try { window.supabaseClient = null; } catch {}
                 }
             } catch (e) {
                 console.warn('Supabase init failed, switching to offline mode:', e);
                 supabaseClient = null;
+                try { window.supabaseClient = null; } catch {}
                 dbOnline = false;
+                setDbStatusOffline();
+            }
+
+            // --- DB STATUS LOADING HELPERS ---
+            function setDbStatusLoading(pct) {
+                try {
+                    const el = document.getElementById('db-status-pill');
+                    if (!el) return;
+                    el.classList.remove('online', 'offline');
+                    el.classList.add('loading');
+                    const clamped = Math.max(0, Math.min(100, Math.round(pct || 0)));
+                    el.textContent = `DB: Loading ${clamped}%`;
+                } catch {}
+            }
+            function setDbStatusOnline() {
+                try {
+                    const el = document.getElementById('db-status-pill');
+                    if (!el) return;
+                    el.classList.remove('loading', 'offline');
+                    el.classList.add('online');
+                    el.textContent = 'DB: Online';
+                } catch {}
+            }
+            function setDbStatusOffline() {
+                try {
+                    const el = document.getElementById('db-status-pill');
+                    if (!el) return;
+                    el.classList.remove('loading', 'online');
+                    el.classList.add('offline');
+                    el.textContent = 'DB: Offline';
+                } catch {}
             }
 
                         // Handle password recovery tokens from URL fragment
@@ -2836,6 +2947,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                         const modal = document.getElementById('account-modal');
                                                         const closeBtn = document.getElementById('account-close-btn');
                                                         const fullnameInput = document.getElementById('account-fullname');
+                                                        const emailInput = document.getElementById('account-email');
                                                         const saveNameBtn = document.getElementById('account-save-name');
                                                         const nameStatus = document.getElementById('account-name-status');
                                                         const newPass = document.getElementById('account-new-pass');
@@ -2857,6 +2969,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                                 const logged = !!user;
                                                                 toggleAccountBtn(logged);
                                                                 if (!logged) return;
+                                                                try { if (emailInput) emailInput.value = user?.email || ''; } catch {}
                                                                 try {
                                                                     const { data: prof } = await supabaseClient.from('profiles').select('full_name').single();
                                                                     const fullname = prof?.full_name || '';
@@ -2936,6 +3049,174 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                 })();
                                                 // --- End Account modal ---
 
+            // Auth/session overlay and Logout wiring
+                (function() {
+                    try {
+                        const gate = document.getElementById('auth-gate-overlay');
+                        const logoutBtn = document.getElementById('account-logout-btn');
+                        async function showGate() { try { gate && gate.classList.remove('hidden'); } catch {} }
+                        async function hideGate() { try { gate && gate.classList.add('hidden'); } catch {} }
+                        async function refreshAuthUI() {
+                            if (!window.supabaseClient) { await showGate(); return; }
+                            try {
+                                const { data } = await window.supabaseClient.auth.getSession();
+                                if (data?.session) { await hideGate(); }
+                                else { await showGate(); }
+                            } catch { await showGate(); }
+                        }
+                        if (window.supabaseClient) {
+                            try {
+                                window.supabaseClient.auth.onAuthStateChange(async (_evt, session) => {
+                                    if (session) await hideGate(); else await showGate();
+                                });
+                            } catch {}
+                            refreshAuthUI();
+                        } else {
+                            showGate();
+                        }
+                        if (logoutBtn) {
+                            logoutBtn.addEventListener('click', async () => {
+                                try {
+                                    if (!window.supabaseClient) return;
+                                    await window.supabaseClient.auth.signOut();
+                                    await showGate();
+                                    // Close account modal if open
+                                    try { document.getElementById('account-modal')?.classList.add('hidden'); } catch {}
+                                    // Bring back login UI explicitly
+                                    try { window.openLoginModal && window.openLoginModal(); window.setMode && window.setMode('signin'); } catch {}
+                                } catch {}
+                            });
+                        }
+                    } catch {}
+                })();
+
+            // Telemetry + DataService (front)
+                (function(){
+                    // Minimal telemetry to mirror backend logEvent
+                    function cid() { try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()); } catch { return String(Date.now()); } }
+                    const CORR = cid();
+                    function log(level, message, meta) {
+                        try {
+                            const entry = { ts: new Date().toISOString(), level, message, correlation_id: CORR, ...(meta||{}) };
+                            console.log('[pm]', JSON.stringify(entry));
+                        } catch {}
+                    }
+                    window.pmLog = {
+                        debug: (m,meta)=>log('debug',m,meta),
+                        info:  (m,meta)=>log('info', m,meta),
+                        warn:  (m,meta)=>log('warn', m,meta),
+                        error: (m,meta)=>log('error',m,meta),
+                        correlationId: CORR
+                    };
+
+                    // Central data service
+                    const svc = {
+                        async getSessionUserId() {
+                            if (!window.supabaseClient) return null;
+                            try { const { data } = await window.supabaseClient.auth.getSession(); return data?.session?.user?.id || null; } catch { return null; }
+                        },
+                        async loadAllData(opts) {
+                            const supa = window.supabaseClient; if (!supa) throw new Error('No Supabase client');
+                            const uid = await svc.getSessionUserId(); if (!uid) throw new Error('No session');
+                            pmLog.info('loadAllData:start',{ uid });
+                            const onP = (typeof opts === 'function') ? opts : (opts && typeof opts.onProgress === 'function' ? opts.onProgress : null);
+                            const fetchT = async (table) => {
+                                // Prefer filtering by user_id; fallback to unfiltered if column is missing
+                                let res = await supa.from(table).select('*').eq('user_id', uid);
+                                if (res.error && /column .*user_id/i.test(res.error.message)) {
+                                    pmLog.warn('loadAllData:fallback_no_user_id',{ table });
+                                    res = await supa.from(table).select('*');
+                                }
+                                // If filter returned empty for legacy-only tables, try unfiltered to catch null user_id rows
+                                if (!res.error && Array.isArray(res.data) && res.data.length === 0 && (table === 'templates' || table === 'input_gallery')) {
+                                    try {
+                                        const alt = await supa.from(table).select('*');
+                                        if (!alt.error && Array.isArray(alt.data) && alt.data.length > 0) res = alt;
+                                    } catch {}
+                                }
+                                return res;
+                            };
+                            // Wrap each fetch to report progress as they resolve
+                            const total = 5; let done = 0;
+                            const wrap = (promise, label) => promise.then((res) => { try { done += 1; onP && onP(done, total, label); } catch {} return res; });
+                            const [p, t, i, n, g] = await Promise.all([
+                                wrap(fetchT('prompts'), 'prompts'),
+                                wrap(fetchT('templates'), 'templates'),
+                                wrap(fetchT('input_gallery'), 'input_gallery'),
+                                wrap(fetchT('node_flows'), 'node_flows'),
+                                wrap(fetchT('global_lists'), 'global_lists')
+                            ]);
+                            if (p.error) throw p.error; if (t.error) throw t.error; if (i.error) throw i.error; if (n.error) throw n.error; if (g.error) throw g.error;
+                            pmLog.info('loadAllData:ok',{ counts: { prompts:(p.data||[]).length, templates:(t.data||[]).length, inputs:(i.data||[]).length, flows:(n.data||[]).length, lists:(g.data||[]).length } });
+                            // If user_id is present, filter client-side just in case fallback was used.
+                            // Include rows missing user_id or with null (legacy) so previously-saved items still appear.
+                            const onlyMine = (rows) => Array.isArray(rows) ? rows.filter(r => !('user_id' in (r||{})) || r.user_id === uid || r.user_id == null) : [];
+                            return { prompts: p.data||[], templates: onlyMine(t.data)||[], inputGallery: onlyMine(i.data)||[], nodeFlows: onlyMine(n.data)||[], lists: onlyMine(g.data)||[] };
+                        },
+                        async upsert(table, data) {
+                            const supa = window.supabaseClient; if (!supa) throw new Error('No Supabase client');
+                            const uid = await svc.getSessionUserId(); if (!uid) throw new Error('No session');
+                            const payload = Array.isArray(data) ? data.map(d=>({ ...d, user_id: d.user_id||uid })) : ({ ...data, user_id: data.user_id||uid });
+                            pmLog.debug('upsert:req',{ table, count: Array.isArray(payload)?payload.length:1 });
+                            const opts = (table === 'node_flows') ? { onConflict: 'user_id,name' } : undefined;
+                            const qb = supa.from(table);
+                            let res = opts ? await qb.upsert(payload, opts).select() : await qb.upsert(payload).select();
+                            if (res.error) {
+                                pmLog.warn('upsert:err:first',{ table, error: res.error.message });
+                                // Legacy compatibility fallbacks for missing columns, including PostgREST schema-cache messages
+                                const errMsg = String(res.error.message || '');
+                                const colMissing = (name) => {
+                                    const a = new RegExp(`(column|attribute)[^\n]*${name}[^\n]*(does not exist|unknown|not found)`, 'i');
+                                    const b = new RegExp(`(ould not find|not found)[^\n]*"?${name}"?[^\n]*(column|schema cache)?`, 'i');
+                                    const c = new RegExp(`${name}[^\n]*(schema cache)`, 'i');
+                                    return a.test(errMsg) || b.test(errMsg) || c.test(errMsg);
+                                };
+                                const stripUserId = colMissing('user_id');
+                                const missingTopP = colMissing('top_p') || colMissing('topP');
+                                const missingParentId = colMissing('parent_id') || colMissing('parentId');
+                                const missingDeps = colMissing('dependencies') || /dependenc/i.test(errMsg);
+                                const needsLegacyTpl = (table === 'templates') && (stripUserId || missingTopP || missingParentId || missingDeps);
+                                const needsLegacyInput = (table === 'input_gallery') && stripUserId;
+                                const needsLegacyPrompts = (table === 'prompts') && (stripUserId || missingParentId);
+                                if (needsLegacyTpl || needsLegacyInput || needsLegacyPrompts) {
+                    const toLegacy = (row) => {
+                                        const r = { ...row };
+                                        if (stripUserId) delete r.user_id;
+                                        if (table === 'templates') {
+                                            if (missingTopP) { if (typeof r.top_p !== 'undefined') { r.topP = r.top_p; delete r.top_p; } }
+                                            if (missingParentId) { if (typeof r.parent_id !== 'undefined') { r.parentId = r.parent_id; delete r.parent_id; } }
+                        if (missingDeps) delete r.dependencies;
+                                        }
+                                        if (table === 'prompts') {
+                                            if (missingParentId) { if (typeof r.parent_id !== 'undefined') { r.parentId = r.parent_id; delete r.parent_id; } }
+                                        }
+                                        return r;
+                                    };
+                                    const legacyPayload = Array.isArray(payload) ? payload.map(toLegacy) : toLegacy(payload);
+                                    pmLog.warn('upsert:retry_legacy',{ table });
+                                    res = opts ? await qb.upsert(legacyPayload, opts).select() : await qb.upsert(legacyPayload).select();
+                                }
+                            }
+                            if (res.error) { pmLog.error('upsert:err',{ table, error: res.error.message }); throw res.error; }
+                            pmLog.info('upsert:ok',{ table, count: (res.data||[]).length });
+                            return res.data||[];
+                        },
+                        async del(table, where) {
+                            const supa = window.supabaseClient; if (!supa) throw new Error('No Supabase client');
+                            const uid = await svc.getSessionUserId(); if (!uid) throw new Error('No session');
+                            let q = supa.from(table).delete();
+                            Object.entries(where||{}).forEach(([k,v])=>{ q = q.eq(k, v); });
+                            q = q.eq('user_id', uid);
+                            const { error } = await q;
+                            if (error) { pmLog.error('delete:err',{ table, where, error: error.message }); throw error; }
+                            pmLog.info('delete:ok',{ table, where });
+                            return true;
+                        },
+                        async updateGlobalList(name, data) { return svc.upsert('global_lists', { name, data }); }
+                    };
+                    window.dataService = svc;
+                })();
+
             const PROMPTS_STORAGE_KEY = 'promptManagerApp_prompts';
             const XML_TAGS_STORAGE_KEY = 'promptManagerApp_xmlTags';
             const TEMPLATES_STORAGE_KEY = 'promptManagerApp_templates';
@@ -2964,6 +3245,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (val === 'use') return 'ready';
                 return 'idea';
             };
+            // Temporary bridge: DB still enforces old set ('write','test','edit','use').
+            // Map UI status to a DB-safe value to avoid check constraint failures until migration lands.
+            const toDbStatus = (s) => {
+                const n = normalizeStatus(s);
+                if (n === 'idea') return 'write';
+                if (n === 'ready') return 'use';
+                if (n === 'archive') return 'write';
+                return n; // 'write' or 'test'
+            };
             let xmlTags = [];
             let templates = [];
             let varLibrary = [];
@@ -2977,6 +3267,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             let expandedPromptGroups = new Set();
             let itemToDelete = { type: null, id: null };
             let activeStatusFilter = 'all';
+            let activeProjectFilter = 'all';
             const effortLevels = ['Low', 'Medium', 'High'];
             let versionsToCompare = new Set();
             let activeComparisonPromptId = null;
@@ -2985,7 +3276,50 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 currentIndex: -1,
                 query: ''
             };
-            let snippets = []; // Para a função de copiar snippet
+            let snippets = []; // Para a função de copiar/salvar snippet
+            let snippetMeasureEl = null; // medidor oculto para calcular Y com precisão
+
+            function getSnippetMeasure() {
+                if (!snippetMeasureEl) {
+                    const cont = document.getElementById('editor-container');
+                    snippetMeasureEl = document.createElement('div');
+                    snippetMeasureEl.id = 'snippet-measure';
+                    snippetMeasureEl.style.position = 'absolute';
+                    snippetMeasureEl.style.left = '0';
+                    snippetMeasureEl.style.top = '0';
+                    snippetMeasureEl.style.visibility = 'hidden';
+                    snippetMeasureEl.style.pointerEvents = 'none';
+                    snippetMeasureEl.style.whiteSpace = 'pre-wrap';
+                    snippetMeasureEl.style.overflowWrap = 'anywhere';
+                    snippetMeasureEl.style.zIndex = '0';
+                    if (cont) cont.appendChild(snippetMeasureEl);
+                }
+                const cs = getComputedStyle(mainEditor);
+                snippetMeasureEl.style.font = cs.font;
+                snippetMeasureEl.style.fontFamily = cs.fontFamily;
+                snippetMeasureEl.style.fontSize = cs.fontSize;
+                snippetMeasureEl.style.lineHeight = cs.lineHeight;
+                snippetMeasureEl.style.letterSpacing = cs.letterSpacing;
+                snippetMeasureEl.style.tabSize = cs.tabSize;
+                snippetMeasureEl.style.boxSizing = 'border-box';
+                snippetMeasureEl.style.paddingTop = cs.paddingTop;
+                snippetMeasureEl.style.paddingRight = cs.paddingRight;
+                snippetMeasureEl.style.paddingBottom = cs.paddingBottom;
+                snippetMeasureEl.style.paddingLeft = cs.paddingLeft;
+                snippetMeasureEl.style.width = mainEditor.clientWidth + 'px';
+                return snippetMeasureEl;
+            }
+
+            function measureTopForIndex(text, index) {
+                const m = getSnippetMeasure();
+                m.textContent = text.substring(0, index);
+                const marker = document.createElement('span');
+                marker.textContent = ' ';
+                m.appendChild(marker);
+                const top = marker.offsetTop;
+                m.removeChild(marker);
+                return top;
+            }
             // Prompt-level GitHub repo selection for current editor
             let currentGithubRepo = null; // { id, full }
             // Estado do Gráfico
@@ -3008,7 +3342,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const themeToggleBtn = document.getElementById('theme-toggle');
             const iconSun = document.getElementById('icon-sun');
             const iconMoon = document.getElementById('icon-moon');
-            const savedTheme = localStorage.getItem('pm_theme') || 'dark';
+            // Cloud-only: don't persist theme locally
+            const savedTheme = (typeof window.__PM_THEME !== 'undefined' ? window.__PM_THEME : 'dark');
             const applyTheme = (theme) => {
                 if (theme === 'light') {
                     rootEl.setAttribute('data-theme', 'light');
@@ -3032,8 +3367,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 // Update DB status pill colors on theme change
                 const dbStatus = document.getElementById('db-status-pill');
                 if (dbStatus) {
+                    // Preserve 'loading' if present; otherwise reflect online/offline
+                    const isLoading = dbStatus.classList.contains('loading');
                     dbStatus.classList.remove('online', 'offline');
-                    dbStatus.classList.add(dbOnline ? 'online' : 'offline');
+                    if (!isLoading) dbStatus.classList.add(dbOnline ? 'online' : 'offline');
                 }
                 // Re-render dashboard charts with theme-aware colors if modal is open
                 setTimeout(() => {
@@ -3052,7 +3389,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             applyTheme(savedTheme);
             themeToggleBtn.addEventListener('click', () => {
                 const next = rootEl.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-                localStorage.setItem('pm_theme', next);
+                window.__PM_THEME = next;
                 applyTheme(next);
             });
 
@@ -3358,11 +3695,37 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 syntaxOverlay.style.lineHeight = cs.lineHeight;
                 syntaxOverlay.style.letterSpacing = cs.letterSpacing;
                 syntaxOverlay.style.tabSize = cs.tabSize;
-                // Mirror padding to keep text starting point aligned
-                syntaxOverlay.style.paddingTop = cs.paddingTop;
-                syntaxOverlay.style.paddingRight = cs.paddingRight;
-                syntaxOverlay.style.paddingBottom = cs.paddingBottom;
-                syntaxOverlay.style.paddingLeft = cs.paddingLeft;
+                syntaxOverlay.style.textAlign = cs.textAlign;
+                syntaxOverlay.style.textIndent = cs.textIndent;
+                syntaxOverlay.style.textTransform = cs.textTransform;
+                syntaxOverlay.style.fontVariantLigatures = cs.fontVariantLigatures;
+                syntaxOverlay.style.fontFeatureSettings = cs.fontFeatureSettings;
+                syntaxOverlay.style.fontVariationSettings = cs.fontVariationSettings;
+                syntaxOverlay.style.direction = cs.direction;
+                syntaxOverlay.style.whiteSpace = cs.whiteSpace;
+                syntaxOverlay.style.wordBreak = cs.wordBreak;
+                syntaxOverlay.style.overflowWrap = cs.overflowWrap;
+                syntaxOverlay.style.boxSizing = 'border-box';
+                // Mirror padding + border widths so overlay content aligns with textarea content box
+                const pt = parseFloat(cs.paddingTop || '0');
+                const pr = parseFloat(cs.paddingRight || '0');
+                const pb = parseFloat(cs.paddingBottom || '0');
+                const pl = parseFloat(cs.paddingLeft || '0');
+                const bl = parseFloat(cs.borderLeftWidth || '0');
+                const br = parseFloat(cs.borderRightWidth || '0');
+                const bt = parseFloat(cs.borderTopWidth || '0');
+                const bb = parseFloat(cs.borderBottomWidth || '0');
+                // Compensate for scrollbar gutter when present so overlay text start/end matches
+                let extraRight = 0;
+                try {
+                    const hasVScroll = mainEditor.scrollHeight > mainEditor.clientHeight + 1;
+                    const scrollbarW = mainEditor.offsetWidth - mainEditor.clientWidth; // includes vertical scrollbar width when shown
+                    extraRight = hasVScroll ? Math.max(0, scrollbarW) : 0;
+                } catch {}
+                syntaxOverlay.style.paddingTop = `${pt + bt}px`;
+                syntaxOverlay.style.paddingRight = `${pr + br + extraRight}px`;
+                syntaxOverlay.style.paddingBottom = `${pb + bb}px`;
+                syntaxOverlay.style.paddingLeft = `${pl + bl}px`;
             }
 
             function renderSyntaxOverlay() {
@@ -3380,8 +3743,18 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 } catch {
                     syntaxOverlay.textContent = raw;
                 }
-                // Mirror scroll position using transform (overlay itself doesn't scroll)
-                try { syntaxOverlay.style.transform = `translateY(-${mainEditor.scrollTop}px)`; } catch {}
+                // Mirror scroll position using integer top offset to avoid fractional rounding jitter
+                try { syntaxOverlay.style.top = `${-Math.round(mainEditor.scrollTop)}px`; } catch {}
+            }
+
+            // Ensure overlay updates when editor value is set programmatically
+            function refreshSyntaxOverlayIfOn() {
+                try {
+                    if (toggleSyntax && toggleSyntax.getAttribute('aria-checked') === 'true') {
+                        syncSyntaxOverlayStyles();
+                        renderSyntaxOverlay();
+                    }
+                } catch {}
             }
 
             function initSyntaxOverlayWiring() {
@@ -3389,17 +3762,21 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 // Ensure styles are synced once
                 syncSyntaxOverlayStyles();
                 // Toggle visibility and render
+                const editorContainer = document.getElementById('editor-container');
                 const applyToggle = () => {
                     try {
                         const isOn = toggleSyntax.getAttribute('aria-checked') === 'true';
                         if (isOn) {
-                            syntaxOverlay.classList.remove('hidden');
+                            // Re-sync styles in case layout changed while off
+                            syncSyntaxOverlayStyles();
                             renderSyntaxOverlay();
+                            if (editorContainer) editorContainer.classList.add('syntax-on');
                         } else {
-                            syntaxOverlay.classList.add('hidden');
                             // Clear to avoid stale highlights when re-enabled
                             syntaxOverlay.innerHTML = '';
                             syntaxOverlay.style.transform = 'translateY(0)';
+                            syntaxOverlay.style.top = '0';
+                            if (editorContainer) editorContainer.classList.remove('syntax-on');
                         }
                         // Update label color based on theme and state
                         if (syntaxLabel) {
@@ -3422,7 +3799,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 mainEditor.addEventListener('input', () => { if (toggleSyntax.getAttribute('aria-checked') === 'true') renderSyntaxOverlay(); });
                 // Scroll sync
                 mainEditor.addEventListener('scroll', () => {
-                    try { syntaxOverlay.style.transform = `translateY(-${mainEditor.scrollTop}px)`; } catch {}
+                    try { syntaxOverlay.style.top = `${-Math.round(mainEditor.scrollTop)}px`; } catch {}
                 });
                 // Resize/style changes
                 window.addEventListener('resize', () => { syncSyntaxOverlayStyles(); if (toggleSyntax.getAttribute('aria-checked') === 'true') renderSyntaxOverlay(); });
@@ -3538,6 +3915,17 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 });
             });
             // ===== Run Prompt feature =====
+            function setReqPreviewMode(mode) {
+                reqPreviewMode = mode === 'only' ? 'only' : 'full';
+                if (reqToggleFullBtn && reqToggleOnlyBtn) {
+                    reqToggleFullBtn.classList.toggle('active', reqPreviewMode === 'full');
+                    reqToggleOnlyBtn.classList.toggle('active', reqPreviewMode === 'only');
+                }
+            }
+            if (reqToggleFullBtn) reqToggleFullBtn.addEventListener('click', () => setReqPreviewMode('full'));
+            if (reqToggleOnlyBtn) reqToggleOnlyBtn.addEventListener('click', () => setReqPreviewMode('only'));
+            // Initialize state
+            setReqPreviewMode('full');
             function resolveConnForModel(modelId) {
                 try {
                     if (!modelId) return null;
@@ -3586,19 +3974,19 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
                     if (!res.ok) return conn;
                     const { id: newId } = await res.json();
-                    const list = JSON.parse(localStorage.getItem(API_KEYS.llm_multi) || '[]');
+                    const list = Array.isArray(window.__PM_LLM_MULTI) ? [...window.__PM_LLM_MULTI] : [];
                     // Migrate models cache
                     const cached = getModelsCache(conn.id);
                     if (cached && cached.length) {
-                        try { localStorage.setItem(modelsCacheKey(newId), JSON.stringify(cached)); } catch {}
-                        try { localStorage.removeItem(modelsCacheKey(conn.id)); } catch {}
+                        try { setModelsCache(newId, cached); } catch {}
+                        try { setModelsCache(conn.id, []); } catch {}
                     }
                     // Replace the local entry with server entry
                     const idx = list.findIndex(i => i.id === conn.id);
                     const serverEntry = { id: newId, base: conn.base, label, server: true };
                     if (idx >= 0) { list.splice(idx, 1, serverEntry); } else { list.push(serverEntry); }
-                    localStorage.setItem(API_KEYS.llm_multi, JSON.stringify(list));
-                    localStorage.setItem(API_KEYS.llm_active, newId);
+                    window.__PM_LLM_MULTI = list;
+                    window.__PM_LLM_ACTIVE = newId;
                     // Persist caches and rebuild Target LLM from connections
                     try { await persistAllModelCachesToServer(); } catch {}
                     try { if (typeof rebuildLlmListFromConnections === 'function') rebuildLlmListFromConnections(); } catch {}
@@ -3613,7 +4001,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 let provider = 'openai';
                 try {
                     const conn = (typeof resolveConnForModel === 'function') ? resolveConnForModel(llmId) : null;
-                    const base = conn?.base || (typeof getActiveLlmConn === 'function' ? (getActiveLlmConn()?.base || '') : '') || (localStorage.getItem(API_KEYS.llm_base) || '');
+                    const base = conn?.base || (typeof getActiveLlmConn === 'function' ? (getActiveLlmConn()?.base || '') : '') || (window.__PM_LLM_BASE || '');
                     if (typeof detectProvider === 'function') provider = detectProvider(base);
                 } catch {}
 
@@ -3918,7 +4306,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 try {
                     const selModel = llmSelect?.value || '';
                     const conn = resolveConnForModel(selModel) || ((typeof getActiveLlmConn === 'function') ? getActiveLlmConn() : null);
-                    const base = conn?.base || (localStorage.getItem(API_KEYS.llm_base) || '');
+                    const base = conn?.base || (window.__PM_LLM_BASE || '');
                     let host = '';
                     try { host = base ? new URL(base).hostname : ''; } catch {}
                     const model = selModel;
@@ -4010,9 +4398,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             async function loadResponseLog() {
                 if (!supabaseClient) return;
+                const { data: userData } = await supabaseClient.auth.getUser();
+                const uid = userData?.user?.id;
+                if (!uid) { if (respLogStatus) respLogStatus.textContent = 'Please log in.'; return; }
                 const q = (respLogSearch?.value || '').trim();
                 let query = supabaseClient.from('prompt_responses')
                     .select('*')
+                    .eq('user_id', uid)
                     .order('run_at', { ascending: false })
                     .range(respLogPage * RESP_LOG_PAGE_SIZE, (respLogPage + 1) * RESP_LOG_PAGE_SIZE - 1);
                 if (q) {
@@ -4063,7 +4455,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     tr.querySelectorAll('.star-btn').forEach(btn => {
                         btn.addEventListener('click', async () => {
                             const val = Number(btn.getAttribute('data-star')) || 0;
-                            await supabaseClient.from('prompt_responses').update({ rating: val }).eq('id', row.id);
+                            const { data: userData } = await supabaseClient.auth.getUser();
+                            const uid = userData?.user?.id; if (!uid) return;
+                            await supabaseClient.from('prompt_responses').update({ rating: val }).eq('id', row.id).eq('user_id', uid);
                             loadResponseLog();
                         });
                     });
@@ -4071,7 +4465,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const saveCommentBtn = tr.querySelector('.save-comment');
                     if (saveCommentBtn) saveCommentBtn.addEventListener('click', async () => {
                         const val = commentInput?.value || '';
-                        await supabaseClient.from('prompt_responses').update({ comment: val }).eq('id', row.id);
+                        const { data: userData } = await supabaseClient.auth.getUser();
+                        const uid = userData?.user?.id; if (!uid) return;
+                        await supabaseClient.from('prompt_responses').update({ comment: val }).eq('id', row.id).eq('user_id', uid);
                     });
                     const viewBtn = tr.querySelector('.view-text');
                     if (viewBtn) viewBtn.addEventListener('click', () => {
@@ -4086,7 +4482,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     if (delBtn) delBtn.addEventListener('click', async () => {
                         const ok = confirm('Delete this saved response?');
                         if (!ok) return;
-                        await supabaseClient.from('prompt_responses').delete().eq('id', row.id);
+                        const { data: userData } = await supabaseClient.auth.getUser();
+                        const uid = userData?.user?.id; if (!uid) return;
+                        await supabaseClient.from('prompt_responses').delete().eq('id', row.id).eq('user_id', uid);
                         loadResponseLog();
                     });
                     respLogTbody.appendChild(tr);
@@ -4238,7 +4636,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 let provider = 'openai';
                 try {
                     const conn = (typeof resolveConnForModel === 'function') ? resolveConnForModel(llmId) : null;
-                    const base = conn?.base || (typeof getActiveLlmConn === 'function' ? (getActiveLlmConn()?.base || '') : '') || (localStorage.getItem(API_KEYS.llm_base) || '');
+                    const base = conn?.base || (typeof getActiveLlmConn === 'function' ? (getActiveLlmConn()?.base || '') : '') || (window.__PM_LLM_BASE || '');
                     if (typeof detectProvider === 'function') provider = detectProvider(base);
                 } catch {}
                 const caps = (typeof getModelCaps === 'function') ? getModelCaps(provider, llmId) : { provider };
@@ -4535,6 +4933,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const nodeSaveResponseBtn = document.getElementById('node-save-response-btn');
             const nodePinResponseBtn = document.getElementById('node-pin-response-btn');
             const closeNodeResponseBtn = document.getElementById('close-node-response-btn');
+            const nodePromptModal = document.getElementById('node-prompt-modal');
+            const nodePromptContent = document.getElementById('node-prompt-content');
+            const nodePromptTitle = document.getElementById('node-prompt-title');
+            const closeNodePromptBtn = document.getElementById('close-node-prompt-btn');
             const deleteFlowBtn = document.getElementById('delete-flow-btn');
 
             // If D3 is unavailable (offline), disable features that require it
@@ -4569,8 +4971,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         id: row.id,
                         // unify camelCase used by UI
                         promptId: String(row.prompt_id || row.promptId || row.promptid || row.id || ''),
-                        // parent can be in parent_id (old) or parant_id (new); prefer new if present
-                        parentId: row.parant_id || row.parent_id || row.parentId || null,
+                        // parent reference normalized to parent_id (preferred); legacy parant_id supported if present
+                        parent_id: row.parent_id || row.parant_id || row.parentId || null,
                         title: row.title,
                         content: row.content,
                         tags: Array.isArray(row.tags) ? row.tags : [],
@@ -4586,145 +4988,189 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         // topP may arrive as top_p from DB; prefer UI camelCase
                         topP: typeof row.topP === 'number' ? row.topP : (typeof row.top_p === 'number' ? row.top_p : 0.9),
                         effort: row.effort || 'Medium',
-                        dependencies: Array.isArray(row.dependencies) ? row.dependencies : ((row.parant_id || row.parent_id) ? [row.parant_id || row.parent_id] : [])
+                        dependencies: Array.isArray(row.dependencies) ? row.dependencies : ((row.parent_id || row.parant_id) ? [row.parent_id || row.parant_id] : [])
+                    };
+                } catch { return row; }
+            };
+
+            // Map templates rows from DB to UI, normalizing parent reference and topP
+            const mapTemplateRowToUI = (row) => {
+                try {
+                    return {
+                        ...row,
+                        parent_id: row.parent_id || row.parentId || null,
+                        topP: typeof row.topP === 'number' ? row.topP : (typeof row.top_p === 'number' ? row.top_p : undefined)
                     };
                 } catch { return row; }
             };
 
             // Project UI prompt object to DB snake_case columns and allowlist fields
     const mapPromptUIToDb = (item) => {
-                const out = {
-                    id: item.id,
-                    prompt_id: item.promptId || item.prompt_id || item.promptid,
-            // write to new parant_id; keep legacy parent_id if present for compatibility
-            parant_id: item.parentId || item.parant_id || item.parent_id || null,
-                    title: item.title,
-                    content: item.content,
-                    tags: Array.isArray(item.tags) ? item.tags : [],
-                    project: item.project || null,
-                    llm: item.llm || null,
-                    status: normalizeStatus(item.status),
+        let userId = null;
+        try {
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                const user = window.__PM_USER || null;
+                if (user && user.id) userId = user.id;
+            }
+        } catch {}
+        // Ensure we always send a valid group identifier; fallback to row id if missing
+        const groupId = item.promptId || item.prompt_id || item.promptid || item.id || null;
+        // Sanitize parent_id: must reference an existing version id; otherwise drop to null
+        let parentRef = item.parent_id || item.parant_id || null;
+        if (parentRef && !(Array.isArray(window.prompts) && window.prompts.some(p => String(p.id) === String(parentRef)))) {
+            parentRef = null;
+        }
+        const out = {
+            id: item.id,
+            prompt_id: groupId,
+            parent_id: parentRef,
+            title: item.title,
+            content: item.content,
+            // Ensure version is persisted; DB enforces NOT NULL
+            version: (item.version !== undefined && item.version !== null && String(item.version).trim() !== '')
+                ? String(item.version)
+                : '1.0',
+            tags: Array.isArray(item.tags) ? item.tags : [],
+            project: item.project || null,
+            llm: item.llm || null,
+            status: toDbStatus(item.status),
             date: item.date ? new Date(item.date).toISOString() : null,
-            // include top_p for DB from UI topP when available
+            comments: (typeof item.comments === 'string') ? item.comments : (item.comments ? String(item.comments) : null),
             top_p: typeof item.topP === 'number' ? item.topP : (typeof item.top_p === 'number' ? item.top_p : undefined),
             temperature: typeof item.temperature === 'number' ? item.temperature : undefined,
-            effort: item.effort
+            effort: item.effort,
+            user_id: item.user_id || userId
+        };
+        Object.keys(out).forEach(k => { if (typeof out[k] === 'undefined') delete out[k]; });
+        return out;
+    };
+
+            // Map Template object from UI to DB (snake_case fields only)
+            const mapTemplateUIToDb = (tpl) => {
+                let userId = null;
+                try {
+                    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                        const user = window.__PM_USER || null;
+                        if (user && user.id) userId = user.id;
+                    }
+                } catch {}
+                const out = {
+                    id: tpl.id,
+                    name: tpl.name,
+                    title: tpl.title || null,
+                    project: tpl.project || null,
+                    content: tpl.content || '',
+                    llm: tpl.llm || null,
+                    temperature: typeof tpl.temperature === 'number' ? tpl.temperature : undefined,
+                    top_p: typeof tpl.topP === 'number' ? tpl.topP : (typeof tpl.top_p === 'number' ? tpl.top_p : undefined),
+                    effort: tpl.effort || null,
+                    parent_id: tpl.parent_id || tpl.parentId || null,
+                    dependencies: Array.isArray(tpl.dependencies) ? tpl.dependencies : [],
+                    tags: Array.isArray(tpl.tags) ? tpl.tags : [],
+                    user_id: tpl.user_id || userId
                 };
-                // remove undefined to avoid Postgrest errors on upsert
                 Object.keys(out).forEach(k => { if (typeof out[k] === 'undefined') delete out[k]; });
                 return out;
             };
 
-            const loadDataFromSupabase = async () => {
+        const loadDataFromSupabase = async () => {
                 try {
-                    const dbStatus = document.getElementById('db-status-pill');
-                    if (dbStatus) {
-                        dbStatus.textContent = dbOnline ? 'DB: Online' : 'DB: Offline';
-                        dbStatus.classList.remove('online', 'offline');
-                        dbStatus.classList.add(dbOnline ? 'online' : 'offline');
-                    }
+                    // DB status follows loadAllData progress exactly
+                    setDbStatusLoading(0);
+                    if (!window.dataService) throw new Error('No dataService');
+                    const { prompts: P, templates: T, inputGallery: I, nodeFlows: N, lists: G } = await window.dataService.loadAllData((done, total) => {
+                        const pct = Math.round((done/total) * 100);
+                        setDbStatusLoading(pct);
+                    });
+                    // Mapping phase is fast; keep final Online after datasets are ready
+                    prompts = (P || []).map(mapPromptRowToUI);
+                    templates = (T || []).map(mapTemplateRowToUI);
+                    inputGallery = I || [];
+                    savedFlows = N || [];
 
-                    if (!supabaseClient) {
-                        loadFromLocalStorage();
-                        return;
-                    }
-
-                    // Require auth for fetching app data
+                    xmlTags = G.find(l => l.name === 'xml_tags')?.data || [];
+                    varLibrary = G.find(l => l.name === 'var_library')?.data || [];
+                    llmList = G.find(l => l.name === 'llm_list')?.data || {};
+                    projectNames = G.find(l => l.name === 'projects')?.data || [];
+                    projectRepoMap = G.find(l => l.name === 'project_repo_map')?.data || {};
                     try {
-                        const { data: sess } = await supabaseClient.auth.getSession();
-                        if (!sess?.session) {
-                            // signed out: don't fallback to localStorage; prompt login via initializeApp()
-                            return;
-                        }
+                        const cacheMap = G.find(l => l.name === 'llm_models_cache')?.data || {};
+                        Object.entries(cacheMap).forEach(([connId, ids]) => { try { localStorage.setItem(modelsCacheKey(connId), JSON.stringify(ids || [])); } catch {} });
                     } catch {}
-
-                    console.log("Fetching data from Supabase...");
-
-                    const { data: promptsData, error: promptsError } = await supabaseClient.from('prompts').select('*');
-                    if (promptsError) throw promptsError;
-                    prompts = (promptsData || []).map(mapPromptRowToUI);
-
-                    const { data: templatesData, error: templatesError } = await supabaseClient.from('templates').select('*');
-                    if (templatesError) throw templatesError;
-                    templates = templatesData || [];
-
-                    const { data: inputGalleryData, error: inputGalleryError } = await supabaseClient.from('input_gallery').select('*');
-                    if (inputGalleryError) throw inputGalleryError;
-                    inputGallery = inputGalleryData || [];
-
-                    const { data: nodeFlowsData, error: nodeFlowsError } = await supabaseClient.from('node_flows').select('*');
-                    if (nodeFlowsError) throw nodeFlowsError;
-                    savedFlows = nodeFlowsData || [];
-
-                    const { data: listsData, error: listsError } = await supabaseClient.from('global_lists').select('*');
-                    if (listsError) throw listsError;
-
-                    xmlTags = listsData.find(l => l.name === 'xml_tags')?.data || [];
-                    varLibrary = listsData.find(l => l.name === 'var_library')?.data || [];
-                    llmList = listsData.find(l => l.name === 'llm_list')?.data || {};
-                    projectNames = listsData.find(l => l.name === 'projects')?.data || [];
-                    projectRepoMap = listsData.find(l => l.name === 'project_repo_map')?.data || {};
-                    // Prime per-connection model caches from server map if present
+                    // Refresh Versions panel project filter after loading data
                     try {
-                        const cacheMap = listsData.find(l => l.name === 'llm_models_cache')?.data || {};
-                        Object.entries(cacheMap).forEach(([connId, ids]) => {
-                            try { localStorage.setItem(modelsCacheKey(connId), JSON.stringify(ids || [])); } catch {}
-                        });
+                        const prev = activeProjectFilter;
+                        populateProjectFilter();
+                        activeProjectFilter = prev || 'all';
+                        updateProjectFilterUI();
                     } catch {}
-
-                    console.log("Data fetched successfully!");
-
+                    // All done: mark DB as Online
+            setDbStatusOnline();
                 } catch (error) {
-                    console.error("Error loading data from Supabase, falling back to localStorage:", error);
-                    loadFromLocalStorage();
+                    console.error('Error loading data from Supabase via dataService:', error);
+            setDbStatusOffline();
                 }
             };
 
                         // Funções para salvar/atualizar/deletar dados individuais
-            const upsertItem = async (table, data) => {
-                if (!supabaseClient) {
-                    // Offline: optimistically return the provided data as "saved"
-                    return Array.isArray(data) ? data : [data];
+        const upsertItem = async (table, data) => {
+                try {
+                    if (!window.dataService) throw new Error('No dataService');
+                    // Respect unique (user_id, name) for node_flows
+            const rows = await window.dataService.upsert(table, data);
+                    return rows || null;
+                } catch (err) {
+                    console.error(`Error upserting to ${table}:`, err);
+                    showValidationAlert('Error saving to Supabase: ' + (err?.message || ''));
+                    return null;
                 }
-                const { data: rows, error } = await supabaseClient.from(table).upsert(data).select();
-                if (error) { console.error(`Error upserting to ${table}:`, error); return null; }
-                return rows || null;
             };
 
             const deleteItem = async (table, id) => {
-                if (!supabaseClient) return; // offline: only mutate local state
-                const { error } = await supabaseClient.from(table).delete().eq('id', id);
-                if (error) console.error(`Error deleting from ${table}:`, error);
+                try {
+                    if (!window.dataService) throw new Error('No dataService');
+                    await window.dataService.del(table, { id });
+                } catch (err) { console.error(`Error deleting from ${table}:`, err); }
             };
 
             // Specific helper to delete a node_flow by its unique name
             const deleteNodeFlowByName = async (name) => {
-                if (!supabaseClient) return; // offline: handled by local state update
-                const { error } = await supabaseClient.from('node_flows').delete().eq('name', name);
-                if (error) console.error('Error deleting from node_flows by name:', error);
+                try {
+                    if (!window.dataService) throw new Error('No dataService');
+                    await window.dataService.del('node_flows', { name });
+                } catch (err) { console.error('Error deleting from node_flows by name:', err); }
             };
 
             const deleteItemsByPromptId = async (promptId) => {
                 if (!supabaseClient) return;
-                const { error } = await supabaseClient.from('prompts').delete().eq('prompt_id', promptId);
+                let userId = null;
+                try {
+                    const { data: sess } = await supabaseClient.auth.getSession();
+                    userId = sess?.session?.user?.id || null;
+                } catch {}
+                const q = supabaseClient.from('prompts').delete().eq('prompt_id', promptId);
+                const { error } = userId ? await q.eq('user_id', userId) : await q;
                 if (error) console.error(`Error deleting prompts by promptId:`, error);
             };
 
             const updateGlobalList = async (listName, data) => {
-                if (!supabaseClient) return; // offline
-                const { error } = await supabaseClient.from('global_lists').upsert({ name: listName, data });
-                if (error) console.error(`Error updating global list ${listName}:`, error);
+                try {
+                    if (!window.dataService) throw new Error('No dataService');
+                    const res = await window.dataService.updateGlobalList(listName, data);
+                    if (!res) console.error(`Error updating global list ${listName}`);
+                } catch (err) { console.error(`Error updating global list ${listName}:`, err); }
             }
 
-            const savePromptsToStorage = () => localStorage.setItem(PROMPTS_STORAGE_KEY, JSON.stringify(prompts));
-            const saveXmlTagsToStorage = () => localStorage.setItem(XML_TAGS_STORAGE_KEY, JSON.stringify(xmlTags));
-            const saveTemplatesToStorage = () => localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(templates));
-            const saveVarLibraryToStorage = () => localStorage.setItem(VAR_LIBRARY_STORAGE_KEY, JSON.stringify(varLibrary));
-            const saveLlmListToStorage = () => localStorage.setItem(LLM_LIST_STORAGE_KEY, JSON.stringify(llmList));
-            const saveInputGalleryToStorage = () => localStorage.setItem(INPUT_GALLERY_STORAGE_KEY, JSON.stringify(inputGallery));
-            const saveFlowsToStorage = () => localStorage.setItem(NODE_FLOWS_STORAGE_KEY, JSON.stringify(savedFlows));
-            const saveProjectNamesToStorage = () => localStorage.setItem(PROJECTS_STORAGE_KEY, JSON.stringify(projectNames));
-            const saveProjectRepoMapToStorage = () => localStorage.setItem(PROJECT_REPO_MAP_STORAGE_KEY, JSON.stringify(projectRepoMap));
+            // Cloud-only mode: disable all localStorage persistence helpers (no-ops)
+            const savePromptsToStorage = () => {};
+            const saveXmlTagsToStorage = () => {};
+            const saveTemplatesToStorage = () => {};
+            const saveVarLibraryToStorage = () => {};
+            const saveLlmListToStorage = () => {};
+            const saveInputGalleryToStorage = () => {};
+            const saveFlowsToStorage = () => {};
+            const saveProjectNamesToStorage = () => {};
+            const saveProjectRepoMapToStorage = () => {};
 
 
             // --- LOGIC FUNCTIONS ---
@@ -4870,7 +5316,37 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const openDependenciesDropdown = () => {
                 renderDependenciesDropdown('');
                 dependenciesSearch.value = '';
+                // Show first to measure
                 dependenciesDropdown.classList.remove('hidden');
+                // Smart position within viewport
+                try {
+                    const bar = document.getElementById('dependency-bar');
+                    const btn = document.getElementById('edit-dependencies-btn');
+                    const dd = dependenciesDropdown;
+                    if (bar && btn && dd) {
+                        const barRect = bar.getBoundingClientRect();
+                        const btnRect = btn.getBoundingClientRect();
+                        const ddRect = dd.getBoundingClientRect();
+                        const vw = window.innerWidth;
+                        const vh = window.innerHeight;
+
+                        // Default: align right edge to bar's right, place above (like a popover up)
+                        let top = btnRect.top - barRect.top - ddRect.height - 8; // 8px gap
+                        let left = barRect.width - ddRect.width - 8; // 8px from right edge
+
+                        // Flip down if there's not enough space above
+                        if (btnRect.top - ddRect.height - 8 < 0) {
+                            top = btnRect.bottom - barRect.top + 8;
+                        }
+
+                        // Clamp horizontally within bar and viewport
+                        left = Math.max(8, Math.min(left, barRect.width - ddRect.width - 8));
+
+                        // Apply
+                        dd.style.top = `${top}px`;
+                        dd.style.left = `${left}px`;
+                    }
+                } catch {}
                 dependenciesSearch.focus();
             };
             const closeDependenciesDropdown = () => {
@@ -4906,7 +5382,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         // Filter versions within the group first
                         const matchingVersions = group.versions.filter(v => {
                             const matchesStatus = activeStatusFilter === 'all' || normalizeStatus(v.status) === normalizeStatus(activeStatusFilter);
-                            if (!matchesStatus) return false;
+                            const matchesProject = activeProjectFilter === 'all' || ((v.project || '').toLowerCase() === activeProjectFilter.toLowerCase());
+                            if (!matchesStatus || !matchesProject) return false;
 
                             if (filterText === '') return true;
 
@@ -4939,6 +5416,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     return;
                 }
 
+                const frag = document.createDocumentFragment();
                 filteredAndSortedGroups.forEach(group => {
                     const isExpanded = expandedPromptGroups.has(group.promptId);
                     const groupContainer = document.createElement('div');
@@ -4950,8 +5428,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         <div class="flex items-center flex-grow truncate">
                             <svg class="toggle-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             <div class="flex flex-col">
-                                <span class="truncate font-sans font-medium text-sm">${S(group.title)}</span>
-                                <span class="truncate font-sans text-xs text-[--text-muted-dark]">${S(group.project || 'No project')}</span>
+                                <span class="truncate font-sans font-medium text-xs">${S(group.title)}</span>
+                                <span class="truncate font-sans text-[10px] text-[--text-muted-dark]">${S(group.project || 'No project')}</span>
                             </div>
                         </div>
                         <button data-action="delete-group" data-prompt-id="${escapeAttr(String(group.promptId))}" class="delete-group-btn invisible group-hover:visible p-1 rounded-md hover:bg-red-900/50 text-[--text-muted-dark] hover:text-red-400">
@@ -4960,28 +5438,36 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     `;
                     const subList = document.createElement('div');
                     subList.className = `version-sub-list ${isExpanded ? 'expanded' : ''}`;
-                    group.versions.forEach(p => {
-                        const item = document.createElement('div');
-                        item.className = 'version-item font-mono';
-            item.innerHTML = `
-                            <div class="flex items-center flex-grow" data-action="select" data-id="${escapeAttr(String(p.id))}">
-                                <input type="checkbox" class="mr-3 h-4 w-4 rounded bg-gray-700 border-gray-600 text-fuchsia-600 focus:ring-fuchsia-500" data-id="${escapeAttr(String(p.id))}" data-prompt-id="${escapeAttr(String(p.promptId))}">
-                                <span class="truncate pr-2 text-gray-400">Version</span>
-                <span class="font-medium text-white">${S(p.version)}</span>
-                            </div>
-                            <span class="text-xs text-gray-500" data-action="select" data-id="${escapeAttr(String(p.id))}">${formatDate(p.date)}</span>
-                        `;
-                        if (String(p.id) === String(selectedVersionId)) item.classList.add('selected');
-                        subList.appendChild(item);
-                    });
+                    if (isExpanded) {
+                        const itemsFrag = document.createDocumentFragment();
+                        group.versions.forEach(p => {
+                            const item = document.createElement('div');
+                            item.className = 'version-item font-mono text-xs';
+                            // Make the whole row clickable for selection
+                            item.setAttribute('data-action', 'select');
+                            item.dataset.id = String(p.id);
+                            item.innerHTML = `
+                                <div class="flex items-center flex-grow" data-action="select" data-id="${escapeAttr(String(p.id))}">
+                                    <input type="checkbox" class="pm-checkbox mr-3" aria-label="Select version ${S(p.version)}" data-id="${escapeAttr(String(p.id))}" data-prompt-id="${escapeAttr(String(p.promptId))}">
+                                    <span class="truncate pr-1 text-gray-400">v</span>
+                                    <span class="font-medium text-white">${S(p.version)}</span>
+                                </div>
+                                <span class="text-xs text-gray-500" data-action="select" data-id="${escapeAttr(String(p.id))}">${formatDate(p.date)}</span>
+                            `;
+                            if (String(p.id) === String(selectedVersionId)) item.classList.add('selected');
+                            itemsFrag.appendChild(item);
+                        });
+                        subList.appendChild(itemsFrag);
+                    }
                     groupContainer.appendChild(header);
                     groupContainer.appendChild(subList);
-                    versionsHistoryList.appendChild(groupContainer);
+                    frag.appendChild(groupContainer);
                 });
+                versionsHistoryList.appendChild(frag);
             };
 
             const renderGallery = () => {
-                galleryGrid.innerHTML = ''; // Limpa o conteúdo anterior
+                galleryGrid.innerHTML = ''; // Clears previous content
 
                 const groupedPrompts = prompts.reduce((acc, p) => {
                     if (!acc[p.promptId]) {
@@ -5002,10 +5488,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 latestVersions.forEach(prompt => {
                     const versionCount = groupedPrompts[prompt.promptId].length;
-                    const depCount = Array.isArray(prompt.dependencies) ? prompt.dependencies.length : (prompt.parentId ? 1 : 0);
+                    const depCount = Array.isArray(prompt.dependencies) ? prompt.dependencies.length : (prompt.parent_id ? 1 : 0);
                     let dependencyTitle = 'N/A';
-                    if (prompt.parentId) {
-                        const parentPrompt = prompts.find(p => p.id === prompt.parentId);
+                    if (prompt.parent_id) {
+                        const parentPrompt = prompts.find(p => p.id === prompt.parent_id);
                         if (parentPrompt) {
                             dependencyTitle = `${parentPrompt.title} (v${parentPrompt.version})`;
                         }
@@ -5054,7 +5540,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 // Build repositories dropdown options from GitHub connections list
                 let repoOptions = [];
                 try {
-                    const ghList = JSON.parse(localStorage.getItem('github_repo_list') || '[]');
+                    const ghList = Array.isArray(window.__PM_GH_REPO_LIST) ? window.__PM_GH_REPO_LIST : [];
                     repoOptions = ghList.map(r => ({ id: r.id, label: r.repo || r.id }));
                 } catch {}
                 const groupedByProject = prompts.reduce((acc, p) => {
@@ -5130,8 +5616,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const rows = (groupedByProject[project] || []).sort((a,b) => a.title.localeCompare(b.title) || parseFloat(b.version) - parseFloat(a.version));
                     rows.forEach(prompt => {
                         let dependencyTitle = 'N/A';
-                        if (prompt.parentId) {
-                            const parentPrompt = prompts.find(p => p.id === prompt.parentId);
+                        if (prompt.parent_id) {
+                            const parentPrompt = prompts.find(p => p.id === prompt.parent_id);
                             if (parentPrompt) {
                                 dependencyTitle = `${parentPrompt.title} (v${parentPrompt.version})`;
                             }
@@ -5182,13 +5668,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 list.forEach(template => {
                     let dependencyTitle = 'N/A';
-                    if (template.parentId) {
-                        const parentPrompt = prompts.find(p => p.id === template.parentId);
+                    if (template.parent_id) {
+                        const parentPrompt = prompts.find(p => p.id === template.parent_id);
                         if (parentPrompt) {
                             dependencyTitle = `${parentPrompt.title} (v${parentPrompt.version})`;
                         }
                     }
-                    const depCount = Array.isArray(template.dependencies) ? template.dependencies.length : (template.parentId ? 1 : 0);
+                    const depCount = Array.isArray(template.dependencies) ? template.dependencies.length : (template.parent_id ? 1 : 0);
 
                     const card = document.createElement('div');
                     card.className = 'gallery-card standard-card bg-[--card-bg-dark] border border-[--border-dark] rounded-md p-3 flex flex-col text-xs text-[--text-dark]';
@@ -5242,6 +5728,31 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const updateStatusFilterUI = () => {
                 const sel = document.getElementById('status-filter-select');
                 if (sel) sel.value = activeStatusFilter;
+            };
+
+            const updateProjectFilterUI = () => {
+                const sel = document.getElementById('project-filter-select');
+                if (sel) sel.value = activeProjectFilter;
+            };
+
+            const populateProjectFilter = () => {
+                const sel = document.getElementById('project-filter-select');
+                if (!sel) return;
+                const set = new Set();
+                set.add('all');
+                try {
+                    (prompts || []).forEach(p => { if (p.project && String(p.project).trim()) set.add(String(p.project).trim()); });
+                    (projectNames || []).forEach(n => { if (n && String(n).trim()) set.add(String(n).trim()); });
+                } catch {}
+                const values = Array.from(set).sort((a,b) => (a==='all')?-1:(b==='all')?1:a.localeCompare(b));
+                sel.innerHTML = '';
+                values.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v;
+                    opt.textContent = v === 'all' ? 'All' : v;
+                    sel.appendChild(opt);
+                });
+                sel.value = activeProjectFilter;
             };
 
             const updateEditorStats = () => {
@@ -5470,7 +5981,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             const getKanbanEntities = (scope) => {
                 if (scope === 'project') {
-                    return Array.from(new Set(prompts.map(p => p.project).filter(Boolean))).sort();
+                    // Use union of known projectNames (global list) and projects present in prompts
+                    const fromPrompts = prompts.map(p => p.project).filter(Boolean);
+                    const fromGlobals = Array.isArray(projectNames) ? projectNames.filter(Boolean) : [];
+                    return Array.from(new Set([...fromGlobals, ...fromPrompts])).sort();
                 }
                 // prompt scope: list prompt groups by title
                 const groups = prompts.reduce((acc,p)=>{ (acc[p.promptId] ||= []).push(p); return acc; },{});
@@ -5571,15 +6085,36 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const entities = getKanbanEntities(scope);
                 kanbanEntitySelect.innerHTML = '';
                 if (scope === 'project') {
-                    entities.forEach(name => {
+                    if (entities.length === 0) {
                         const opt = document.createElement('option');
-                        opt.value = name; opt.textContent = name; kanbanEntitySelect.appendChild(opt);
-                    });
+                        opt.value = '';
+                        opt.textContent = 'No projects';
+                        opt.disabled = true;
+                        opt.selected = true;
+                        kanbanEntitySelect.appendChild(opt);
+                    } else {
+                        entities.forEach(name => {
+                            const opt = document.createElement('option');
+                            opt.value = name; opt.textContent = name; kanbanEntitySelect.appendChild(opt);
+                        });
+                        // Ensure a selection exists
+                        kanbanEntitySelect.value = entities[0];
+                    }
                 } else {
-                    entities.forEach(({id, title}) => {
+                    if (entities.length === 0) {
                         const opt = document.createElement('option');
-                        opt.value = id; opt.textContent = title; kanbanEntitySelect.appendChild(opt);
-                    });
+                        opt.value = '';
+                        opt.textContent = 'No prompts';
+                        opt.disabled = true;
+                        opt.selected = true;
+                        kanbanEntitySelect.appendChild(opt);
+                    } else {
+                        entities.forEach(({id, title}) => {
+                            const opt = document.createElement('option');
+                            opt.value = id; opt.textContent = title; kanbanEntitySelect.appendChild(opt);
+                        });
+                        kanbanEntitySelect.value = entities[0].id;
+                    }
                 }
                 renderKanban();
             };
@@ -5797,7 +6332,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     
                     if (llmApiKeyInput) llmApiKeyInput.value = '';
                     if (githubTokenInput) githubTokenInput.value = '';
-                    if (githubRepoInput) githubRepoInput.value = localStorage.getItem(API_KEYS.gh_repo) || '';
+                    if (githubRepoInput) githubRepoInput.value = window.__PM_GH_REPO || '';
                     // Ensure legacy single LLM is visible in the multi list
                     migrateSingleLlmToMulti();
                     renderLlmApiList();
@@ -5814,7 +6349,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             function populateServerSelectOptions() {
                 if (!llmApiServerSelect) return;
                 const conns = (typeof getLlmConnections === 'function') ? getLlmConnections().filter(c => c && c.server) : [];
-                const activeId = localStorage.getItem(API_KEYS.llm_active);
+                const activeId = window.__PM_LLM_ACTIVE;
                 llmApiServerSelect.innerHTML = '';
                 const placeholder = document.createElement('option');
                 placeholder.value = '';
@@ -5873,12 +6408,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 // Never persist LLM/GitHub secrets to localStorage anymore
                 const forbidden = new Set([API_KEYS.llm_key, API_KEYS.llm_base, API_KEYS.gh_token]);
                 if (!el || !el.value || forbidden.has(key)) return;
-                localStorage.setItem(key, el.value);
+                window[key === API_KEYS.llm_base ? '__PM_LLM_BASE' : '__PM_GH_REPO'] = el.value;
             };
             // ===== Active connection helpers (global) =====
             function getActiveLlmConn() {
-                const list = JSON.parse(localStorage.getItem(API_KEYS.llm_multi) || '[]');
-                const activeId = localStorage.getItem(API_KEYS.llm_active);
+                const list = Array.isArray(window.__PM_LLM_MULTI) ? window.__PM_LLM_MULTI : [];
+                const activeId = window.__PM_LLM_ACTIVE;
                 return list.find(i => i.id === activeId) || null;
             }
             // Pending server-stored LLM connection created during Test, before user clicks Add
@@ -6005,9 +6540,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
         }
 
         if (apiStatusPill) {
-            apiStatusPill.addEventListener('click', async () => {
-                try { await refreshApiStatus(); } catch {}
+            apiStatusPill.addEventListener('click', () => {
+                // Open first with a quick loading state, then refresh asynchronously
+                if (apiStatusSummary) apiStatusSummary.textContent = 'Loading…';
+                if (apiListOnline) apiListOnline.innerHTML = '';
+                if (apiListOffline) apiListOffline.innerHTML = '';
+                if (apiStatusErrors) { apiStatusErrors.textContent = ''; apiStatusErrors.classList.add('hidden'); }
                 apiStatusModal?.classList.remove('hidden');
+                refreshApiStatus().catch(() => {});
             });
         }
         if (closeApiStatusModalBtn) closeApiStatusModalBtn.addEventListener('click', () => apiStatusModal?.classList.add('hidden'));
@@ -6044,8 +6584,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
         }
 
             function getActiveGithubConn() {
-                const list = JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]');
-                const activeId = localStorage.getItem(API_KEYS.gh_active);
+                const list = Array.isArray(window.__PM_GH_MULTI) ? window.__PM_GH_MULTI : [];
+                const activeId = window.__PM_GH_ACTIVE;
                 return list.find(i => i.id === activeId) || null;
             }
             async function githubRequest(path, init = {}) {
@@ -6934,8 +7474,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 return { body: out, preferEndpoint: caps.preferEndpoint, unsupportedReason: caps.unsupportedReason, ensureTools: caps.ensureTools };
             }
             const modelsCacheKey = (id) => `llm_models_cache_${id}`;
-            const getModelsCache = (id) => { try { return JSON.parse(localStorage.getItem(modelsCacheKey(id)) || '[]'); } catch { return []; } };
-            const setModelsCache = (id, ids) => { try { localStorage.setItem(modelsCacheKey(id), JSON.stringify(ids || [])); } catch {} };
+            // In-memory models cache (cloud-only; no localStorage)
+            const __MODELS_CACHE = {};
+            const getModelsCache = (id) => { try { return Array.isArray(__MODELS_CACHE[modelsCacheKey(id)]) ? __MODELS_CACHE[modelsCacheKey(id)] : []; } catch { return []; } };
+            const setModelsCache = (id, ids) => { try { __MODELS_CACHE[modelsCacheKey(id)] = Array.isArray(ids) ? ids.slice(0) : []; } catch {} };
 
             // Persist all per-connection model caches to DB (global_lists: 'llm_models_cache')
             async function persistAllModelCachesToServer() {
@@ -7824,6 +8366,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     mainEditor.value = md;
                     updateEditorStats();
                     renderVariables();
+                    // Keep syntax overlay in sync when ON
+                    refreshSyntaxOverlayIfOn();
                     const title = gitImportTitleInput?.value.trim();
                     const project = gitImportProjectInput?.value.trim();
                     if (title) titleInput.value = title;
@@ -7991,7 +8535,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     temperature: 0.7,
                     topP: 0.9,
                     effort: 'Medium',
-                    parentId: '',
+                    parent_id: '',
                 };
                 // Track new project names
                 if (project && !projectNames.includes(project)) {
@@ -8001,7 +8545,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
                 // Save locally
                 prompts.push(newItem);
-                savePromptsToStorage();
+                // ...salvamento local removido...
                 // Try to upsert remotely
                 const saved = await upsertItem('prompts', mapPromptUIToDb(newItem));
                 if (!saved) console.warn('Remote save failed or offline; kept local');
@@ -8203,6 +8747,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 tagsInput.value = '';
                 renderNavigationMap();
                 updateSnippetButtons();
+                // If syntax overlay is active, reflect cleared editor immediately
+                refreshSyntaxOverlayIfOn();
             };
             
             const loadVersionIntoEditor = (versionId) => {
@@ -8229,7 +8775,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             
                 const depsToShow = (promptVersion.dependencies && promptVersion.dependencies.length)
                     ? promptVersion.dependencies
-                    : (promptVersion.parentId ? [promptVersion.parentId] : []);
+                    : (promptVersion.parent_id ? [promptVersion.parent_id] : []);
                 renderDependencyBar(depsToShow);
             
                 populateProjectDataList();
@@ -8238,6 +8784,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 tagsInput.value = '';
                 renderNavigationMap();
                 updateSnippetButtons();
+                // Re-render syntax overlay to reflect newly loaded content when Syntax is ON
+                refreshSyntaxOverlayIfOn();
             };
             
             const saveVersion = async (isMajor = false) => {
@@ -8248,7 +8796,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const activeStatus = normalizeStatus(document.querySelector('.status-option.active')?.dataset.status || 'idea');
                 const llm = llmSelect.value;
                 const selectedDepIds = currentDependencies.map(String);
-                const parentId = selectedDepIds.length === 1 ? selectedDepIds[0] : null; // legacy parentId
+                const parent_id = selectedDepIds.length === 1 ? selectedDepIds[0] : null;
                 const dyn = collectDynamicSettings();
                 const temperature = dyn.temperature ?? 0.7;
                 const topP = dyn.topP ?? 0.9;
@@ -8298,7 +8846,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     id: getUUID(),
                     promptId: promptIdToUse, // <-- propriedade atualizada
                     title, project, content,
-                    version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parentId,
+                    version: newVersionNumber, status: activeStatus, llm, date: new Date().toISOString(), parent_id,
                     dependencies: selectedDepIds,
                     temperature, topP, effort, tags: currentTags, comments,
                     modelSettings: dyn,
@@ -8332,7 +8880,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     status: 'idea',
                     llm: originalPrompt.llm,
                     date: new Date().toISOString(),
-                    parentId: String(selectedVersionId), // Mantém o link com a versão original
+                    parent_id: String(selectedVersionId), // Mantém o link com a versão original
                     temperature: originalPrompt.temperature,
                     topP: originalPrompt.topP,
                     effort: originalPrompt.effort,
@@ -8580,7 +9128,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 const links = [];
                 prompts.forEach(p => {
-                    const depIds = (p.dependencies && p.dependencies.length) ? p.dependencies : (p.parentId ? [p.parentId] : []);
+                    const depIds = (p.dependencies && p.dependencies.length) ? p.dependencies : (p.parent_id ? [p.parent_id] : []);
                     depIds.forEach(depId => {
                         if (depId !== null && nodeIds.has(p.id) && nodeIds.has(depId)) {
                             links.push({ source: depId, target: p.id });
@@ -8672,8 +9220,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                     if (!childPrompt.dependencies.includes(firstNodeForConnection.id)) {
                                         childPrompt.dependencies.push(firstNodeForConnection.id);
                                     }
-                                    // Keep legacy parentId in sync if exactly one dependency
-                                    childPrompt.parentId = (childPrompt.dependencies.length === 1) ? childPrompt.dependencies[0] : null;
+                                    // Keep parent_id in sync if exactly one dependency
+                                    childPrompt.parent_id = (childPrompt.dependencies.length === 1) ? childPrompt.dependencies[0] : null;
                                     savePromptsToStorage();
                                     renderDependencyGraph({ project: graphProjectFilter.value });
                                     await upsertItem('prompts', mapPromptUIToDb(childPrompt));
@@ -8763,25 +9311,39 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 const textUpToStart = text.substring(0, blockStartIndex);
                                 const startLineNumber = textUpToStart.split('\n').length - 1;
 
-                                snippets.push({ content: blockContent });
+                                snippets.push({ content: blockContent, tagName });
                                 const snippetIndex = snippets.length - 1;
 
-                                const button = document.createElement('button');
-                                button.className = 'copy-snippet-btn';
-                                button.title = 'Copy XML Snippet';
-                                button.dataset.snippetIndex = snippetIndex;
-                                button.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`;
+                                // Holder to place both Copy and Save buttons side-by-side
+                                const holder = document.createElement('div');
+                                holder.className = 'snippet-btn-holder';
 
-                                const styles = getComputedStyle(mainEditor);
-                                const lineHeight = parseFloat(styles.lineHeight);
-                                const paddingTop = parseFloat(styles.paddingTop);
+                                const copyBtn = document.createElement('button');
+                                copyBtn.className = 'copy-snippet-btn';
+                                copyBtn.title = 'Copy XML snippet';
+                                copyBtn.dataset.snippetIndex = snippetIndex;
+                                copyBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`;
+
+                                const saveBtn = document.createElement('button');
+                                saveBtn.className = 'save-snippet-btn';
+                                saveBtn.title = 'Save XML snippet';
+                                saveBtn.dataset.snippetIndex = snippetIndex;
+                                // Save icon (arrow into tray)
+                                saveBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4"/></svg>`;
+
+                                // Attach buttons then position by top + right
+                                holder.appendChild(copyBtn);
+                                holder.appendChild(saveBtn);
                                 const scrollTop = mainEditor.scrollTop;
-                                const scrollLeft = mainEditor.scrollLeft;
-
-                                button.style.top = `${(startLineNumber * lineHeight) + paddingTop - scrollTop}px`;
-                                button.style.right = `${15 - scrollLeft}px`;
-
-                                snippetButtonsOverlay.appendChild(button);
+                                const topPx = measureTopForIndex(text, blockStartIndex);
+                                holder.style.top = `${topPx - scrollTop}px`;
+                                // Right anchor with scrollbar compensation so the holder stays visible
+                                try {
+                                    const scW = Math.max(0, mainEditor.offsetWidth - mainEditor.clientWidth);
+                                    holder.style.right = (16 + scW) + 'px';
+                                } catch { holder.style.right = '16px'; }
+                                // Ensure holder is added to the overlay
+                                snippetButtonsOverlay.appendChild(holder);
                                 break; 
                             }
                         }
@@ -9417,7 +9979,26 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
                 
                 if (itemToSave) {
-                    await upsertItem('input_gallery', itemToSave); // Salva apenas o item modificado/novo
+                    // Persist only supported columns to DB; keep project only in local cache/UI
+                    const dbRow = { id: itemToSave.id, name: itemToSave.name, content: itemToSave.content };
+                    const rows = await upsertItem('input_gallery', dbRow);
+                    let ok = Array.isArray(rows) && rows.length > 0;
+                    if (!ok) {
+                        try { await loadDataFromSupabase(); } catch {}
+                        ok = (inputGallery || []).some(i => String(i.id) === String(itemToSave.id));
+                    }
+                    if (!ok) {
+                        showModal('Save failed', 'Could not save input to Supabase. Check your connection and authentication.', [
+                            { text: 'OK', className: 'action-button primary', onClick: hideModal }
+                        ]);
+                        return;
+                    }
+                    // If rows returned, merge canonical DB row back; otherwise local item already synced via reload
+                    if (Array.isArray(rows) && rows.length > 0) {
+                        const saved = rows[0];
+                        const idx = inputGallery.findIndex(i => i.id === saved.id);
+                        if (idx !== -1) inputGallery[idx] = { ...inputGallery[idx], ...saved };
+                    }
                 }
 
                 saveInputGalleryToStorage();
@@ -9497,7 +10078,11 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     nodeRuntime.set(n.id, st);
                     const nodeEl = document.getElementById(`flow-node-${n.id}`);
                     const pinBtn = nodeEl?.querySelector('[data-action="pin"]');
-                    if (pinBtn) pinBtn.textContent = st.pinned ? '📍' : '📌';
+                    if (pinBtn) {
+                        pinBtn.classList.toggle('text-[--accent-mint]', st.pinned);
+                        pinBtn.setAttribute('aria-pressed', st.pinned ? 'true' : 'false');
+                        pinBtn.title = st.pinned ? 'Unpin (Pinned)' : 'Pin';
+                    }
                 });
             }
             function openNodeResponseModal(nodeId) {
@@ -9594,7 +10179,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const st = nodeRuntime.get(nodeId) || {}; st.response = text; nodeRuntime.set(nodeId, st);
                     setNodeStatus(nodeId, 'success');
                     // Restore editor context
-                    titleInput.value = backup.title; mainEditor.value = backup.content; if (llmSelect) llmSelect.value = backup.llm;
+                    titleInput.value = backup.title; mainEditor.value = backup.content; if (llmSelect) llmSelect.value = backup.llm; refreshSyntaxOverlayIfOn();
                 } catch (e) {
                     setNodeStatus(nodeId, 'error');
                     const err = e?.message || String(e);
@@ -9680,14 +10265,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const prompt = prompts.find(p => p.id === nodeData.promptId);
                     if (prompt) {
                         let dependencyTitle = 'N/A';
-                         if (prompt.parentId) {
-                             const parentPrompt = prompts.find(p => p.id === prompt.parentId);
+                         if (prompt.parent_id) {
+                             const parentPrompt = prompts.find(p => p.id === prompt.parent_id);
                              if (parentPrompt) dependencyTitle = `${parentPrompt.title} (v${parentPrompt.version})`;
                          }
-                        const depCount = Array.isArray(prompt.dependencies) ? prompt.dependencies.length : (prompt.parentId ? 1 : 0);
+                        const depCount = Array.isArray(prompt.dependencies) ? prompt.dependencies.length : (prompt.parent_id ? 1 : 0);
             nodeEl.innerHTML = `
                             <div class="flex items-center gap-2 mb-1">
-                <h3 class="font-bold text-base truncate pr-2 flex-1 min-w-0" style="color: var(--accent-fuchsia);">${S(prompt.title)}</h3>
+                <h3 class="font-bold text-base truncate pr-2 flex-1 min-w-0" data-role="node-prompt-title" style="color: var(--accent-fuchsia);">${S(prompt.title)}</h3>
                 <span class="text-xs font-mono bg-[#333] text-[#ccc] rounded-full px-2 py-0.5 shrink-0">v${S(prompt.version)}</span>
                             </div>
                             <div class="mb-1">
@@ -9700,10 +10285,29 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             <div class="mt-2 flex items-center justify-between gap-2">
                                 <span class="flow-status idle" data-status>Idle</span>
                                 <div class="node-actions flex items-center gap-1">
-                                    <button title="View Response" data-action="view">👁️</button>
-                                    <button title="Save Response" data-action="save">💾</button>
-                                    <button title="Load Saved" data-action="load">📂</button>
-                                    <button title="Pin/Unpin" data-action="pin">📌</button>
+                                    <button title="View Response" data-action="view" aria-label="View Response">
+                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.273 4.5 12 4.5c4.727 0 8.577 3.01 9.964 7.178.07.2.07.444 0 .644C20.577 16.49 16.727 19.5 12 19.5c-4.727 0-8.577-3.01-9.964-7.178z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                    </button>
+                                    <button title="Save Response" data-action="save" aria-label="Save Response">
+                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M7.5 11.25L12 15.75l4.5-4.5M12 15.75V3"/>
+                                        </svg>
+                                    </button>
+                                    <button title="Load Saved" data-action="load" aria-label="Load Saved">
+                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V8.25A2.25 2.25 0 014.5 6h3.879a2.25 2.25 0 001.59-.659l1.06-1.06A2.25 2.25 0 0112.62 3h6.88A2.25 2.25 0 0121.75 5.25V9M3 9.75h18V18.75A2.25 2.25 0 0118.75 21H5.25A2.25 2.25 0 013 18.75V9.75z"/>
+                                        </svg>
+                                    </button>
+                                    <button title="Pin/Unpin" data-action="pin" aria-label="Pin" aria-pressed="false">
+                                        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <circle cx="12" cy="6" r="2" />
+                                            <path d="M9 9h6l-3 5-3-5z" fill="currentColor" stroke="none" />
+                                            <path d="M12 14v7" stroke-linecap="round" />
+                                        </svg>
+                                    </button>
                                 </div>
                             </div>
                             <div class="mt-3 pt-2 border-t border-[--border-dark] grid grid-cols-3 gap-2 text-center font-mono">
@@ -9829,10 +10433,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     compareVersionsBtn.disabled = versionsToCompare.size !== 2;
 
                 } else if (item) {
-                    const actionTarget = target.closest('[data-action="select"]');
-                     if (actionTarget) {
-                         loadVersionIntoEditor(actionTarget.dataset.id);
-                     }
+                    const actionTarget = target.closest('[data-action="select"]') || item;
+                    if (actionTarget && actionTarget.dataset && actionTarget.dataset.id) {
+                        loadVersionIntoEditor(actionTarget.dataset.id);
+                    }
                 }
             });
 
@@ -9844,7 +10448,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const statusFilterSelect = document.getElementById('status-filter-select');
             if (statusFilterSelect) {
                 statusFilterSelect.addEventListener('change', (e) => {
-                    activeStatusFilter = normalizeStatus(e.target.value || 'all');
+                    const val = (e.target.value || 'all').toLowerCase();
+                    activeStatusFilter = (val === 'all') ? 'all' : normalizeStatus(val);
                     updateStatusFilterUI();
                     renderVersionsList();
                 });
@@ -9858,7 +10463,12 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             });
             mainEditor.addEventListener('scroll', updateSnippetButtons);
 
-            searchInput.addEventListener('input', () => renderVersionsList());
+            // Debounce search input to reduce re-renders while typing
+            let _versionsSearchTmr = null;
+            searchInput.addEventListener('input', () => {
+                if (_versionsSearchTmr) clearTimeout(_versionsSearchTmr);
+                _versionsSearchTmr = setTimeout(() => { renderVersionsList(); }, 150);
+            });
 
             copyPromptBtn.addEventListener('click', () => {
                 let textToCopy = mainEditor.value;
@@ -9925,7 +10535,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 promptToUpdate.tags = [...tagsContainer.querySelectorAll('.prompt-tag span')].map(span => span.textContent);
                 // Persist dependencies edited via the bottom bar
                 promptToUpdate.dependencies = currentDependencies.map(String);
-                promptToUpdate.parentId = (promptToUpdate.dependencies.length === 1) ? promptToUpdate.dependencies[0] : null;
+                promptToUpdate.parent_id = (promptToUpdate.dependencies.length === 1) ? promptToUpdate.dependencies[0] : null;
                 // Persist GitHub repo selection at prompt level
                 if (currentGithubRepo && currentGithubRepo.id) {
                     promptToUpdate.githubRepo = currentGithubRepo.id;
@@ -10041,6 +10651,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (e.target === templatesModal) templatesModal.classList.add('hidden');
             });
             if (templatesProjectFilter) templatesProjectFilter.addEventListener('change', renderTemplatesGrid);
+            // Project filter (Versions panel)
+            populateProjectFilter();
+            const projectFilterSelect = document.getElementById('project-filter-select');
+            if (projectFilterSelect) {
+                projectFilterSelect.addEventListener('change', (e) => {
+                    activeProjectFilter = (e.target.value || 'all');
+                    updateProjectFilterUI();
+                    renderVersionsList();
+                });
+            }
             
             templatesGridContainer.addEventListener('click', (e) => {
                 const card = e.target.closest('.gallery-card');
@@ -10059,8 +10679,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     projectInput.value = template.project;
                     mainEditor.value = template.content;
                     llmSelect.value = template.llm;
-                    // Apply dependencies from template (multi) or legacy parentId
-                    const tDeps = (template.dependencies && template.dependencies.length) ? template.dependencies : (template.parentId ? [template.parentId] : []);
+                    // Apply dependencies from template (multi) or parent_id
+                    const tDeps = (template.dependencies && template.dependencies.length) ? template.dependencies : (template.parent_id ? [template.parent_id] : []);
                     renderDependencyBar(tDeps);
                     updateSlidersUI(template);
                     updateEditorStats();
@@ -10068,6 +10688,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     renderPromptTags(template.tags);
                     templatesModal.classList.add('hidden');
                     updateSnippetButtons();
+                    refreshSyntaxOverlayIfOn();
                 } else if (action === 'delete-template') {
                     showModal(
                         'Confirm Deletion',
@@ -10090,12 +10711,20 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
             });
 
-            saveAsTemplateBtn.addEventListener('click', () => {
+            saveAsTemplateBtn.addEventListener('click', async () => {
                 const content = mainEditor.value.trim();
                 if (!content) {
                     showValidationAlert('The editor is empty. Write something to save as a template.');
                     return;
                 }
+                // Require authentication to save to Supabase
+                try {
+                    if (!window.dataService || !(await window.dataService.getSessionUserId())) {
+                        if (typeof window.openLoginModal === 'function') window.openLoginModal();
+                        showValidationAlert('Please sign in to save templates to the cloud.');
+                        return;
+                    }
+                } catch {}
 
                 const currentTags = [...tagsContainer.querySelectorAll('.prompt-tag span')].map(span => span.textContent);
 
@@ -10108,7 +10737,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     temperature: dynNow.temperature ?? 0.7,
                     topP: dynNow.topP ?? 0.9,
                     effort: dynNow.effort !== undefined ? effortLevels[dynNow.effort] : 'Medium',
-                    parentId: (currentDependencies.length === 1) ? currentDependencies[0] : null,
+                    parent_id: (currentDependencies.length === 1) ? currentDependencies[0] : null,
                     dependencies: currentDependencies.map(String),
                     tags: currentTags
                 };
@@ -10124,13 +10753,25 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             onClick: async () => {
                                 const templateName = document.getElementById('confirm-modal-input').value.trim();
                                 if (templateName) {
-                                    const newTemplate = { ...templateData, name: templateName, id: Date.now() };
-                                    templates.push(newTemplate);
-                                    saveTemplatesToStorage();
-                                    await upsertItem('templates', newTemplate);
+                                    const newTemplate = { ...templateData, name: templateName, id: String(Date.now()) };
+                                    const rows = await upsertItem('templates', mapTemplateUIToDb(newTemplate));
+                                    let ok = Array.isArray(rows) && rows.length > 0;
+                                    if (!ok) {
+                                        // Some setups may not return rows even on success; reload and verify
+                                        try { await loadDataFromSupabase(); } catch {}
+                                        ok = (templates || []).some(t => String(t.id) === String(newTemplate.id));
+                                    }
+                                    if (!ok) {
+                                        showModal('Save failed', 'Could not save template to Supabase. Check your connection and authentication.', [
+                                            { text: 'OK', className: 'action-button primary', onClick: hideModal }
+                                        ]);
+                                        return;
+                                    }
+                                    // Ensure latest state and refresh UI
+                                    try { await loadDataFromSupabase(); } catch {}
+                                    renderTemplatesGrid();
                                     hideModal();
                                     setTimeout(() => {
-                                        // Ensure the success modal can be closed properly
                                         showModal('Success', `Template "${templateName}" saved.`, [
                                             { text: 'OK', className: 'action-button primary', onClick: hideModal }
                                         ]);
@@ -10273,9 +10914,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const parentIdToRemove = String(selectedLinkForDeletion.source.id);
                     const childPrompt = prompts.find(p => String(p.id) === childId);
                     if (childPrompt) {
-                        if (!Array.isArray(childPrompt.dependencies)) childPrompt.dependencies = childPrompt.parentId ? [childPrompt.parentId] : [];
+                        if (!Array.isArray(childPrompt.dependencies)) childPrompt.dependencies = childPrompt.parent_id ? [childPrompt.parent_id] : [];
                         childPrompt.dependencies = childPrompt.dependencies.filter(id => String(id) !== parentIdToRemove);
-                        childPrompt.parentId = (childPrompt.dependencies.length === 1) ? childPrompt.dependencies[0] : null;
+                        childPrompt.parent_id = (childPrompt.dependencies.length === 1) ? childPrompt.dependencies[0] : null;
                         savePromptsToStorage();
                         await upsertItem('prompts', mapPromptUIToDb(childPrompt));
                         renderDependencyGraph({ project: graphProjectFilter.value });
@@ -10589,33 +11230,112 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             
             // Add Input now uses the in-drawer list; dropdown removed
 
-            // --- EVENTO DO SNIPPET COPY ---
+            // --- EVENTOS DO SNIPPET: COPIAR e SALVAR ---
             snippetButtonsOverlay.addEventListener('click', (e) => {
-                const button = e.target.closest('.copy-snippet-btn');
-                if (button) {
-                    const index = parseInt(button.dataset.snippetIndex, 10);
-                    if (snippets[index]) {
-                        const textToCopy = snippets[index].content;
-                        
-                        const textArea = document.createElement('textarea');
-                        textArea.value = textToCopy;
-                        textArea.style.position = 'fixed';
-                        textArea.style.opacity = '0';
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        try {
-                            document.execCommand('copy');
-                            button.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
-                            button.classList.add('copied');
-                            setTimeout(() => {
-                                button.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`;
-                                button.classList.remove('copied');
-                            }, 1500);
-                        } catch (err) {
-                            console.error('Failed to copy snippet:', err);
-                        }
-                        document.body.removeChild(textArea);
+                const copyBtn = e.target.closest('.copy-snippet-btn');
+                const saveBtn = e.target.closest('.save-snippet-btn');
+                if (copyBtn) {
+                    const index = parseInt(copyBtn.dataset.snippetIndex, 10);
+                    const snip = snippets[index];
+                    if (!snip) return;
+                    // Use execCommand fallback for broader compatibility as before
+                    const textArea = document.createElement('textarea');
+                    textArea.value = snip.content;
+                    textArea.style.position = 'fixed';
+                    textArea.style.opacity = '0';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        copyBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                        copyBtn.classList.add('copied');
+                        setTimeout(() => {
+                            copyBtn.innerHTML = `<svg class=\"w-4 h-4\" fill=\"none\" stroke=\"currentColor\" viewBox=\"0 0 24 24\" xmlns=\"http://www.w3.org/2000/svg\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z\"></path></svg>`;
+                            copyBtn.classList.remove('copied');
+                        }, 1500);
+                    } catch (err) {
+                        console.error('Failed to copy snippet:', err);
                     }
+                    document.body.removeChild(textArea);
+                    return;
+                }
+                if (saveBtn) {
+                    const index = parseInt(saveBtn.dataset.snippetIndex, 10);
+                    const snip = snippets[index];
+                    if (!snip) return;
+                    // Etapa 1: escolha do tipo de salvamento
+                    showModal('Save snippet', 'How do you want to save this snippet?', [
+                        { text: 'Template', className: 'action-button', onClick: () => {
+                            const defName = (snip.tagName ? `${snip.tagName} snippet` : 'Snippet template');
+                            showModal('Save as Template', 'Enter a name for this template snippet:', [
+                                { text: 'Cancel', className: 'action-button', onClick: hideModal },
+                                { text: 'Save', className: 'action-button primary', onClick: async () => {
+                                    const name = document.getElementById('confirm-modal-input').value.trim() || defName;
+                                    const dyn = collectDynamicSettings();
+                                    const newTemplate = {
+                                        id: getUUID(),
+                                        name,
+                                        title: titleInput.value.trim(),
+                                        project: projectInput.value.trim(),
+                                        content: snip.content,
+                                        llm: llmSelect.value,
+                                        temperature: dyn.temperature ?? 0.7,
+                                        topP: dyn.topP ?? 0.9,
+                                        effort: dyn.effort !== undefined ? effortLevels[dyn.effort] : 'Medium',
+                                        parent_id: (currentDependencies.length === 1) ? currentDependencies[0] : null,
+                                        dependencies: currentDependencies.map(String),
+                                        tags: [...tagsContainer.querySelectorAll('.prompt-tag span')].map(s => s.textContent)
+                                    };
+                                    try { await upsertItem('templates', mapTemplateUIToDb(newTemplate)); await loadDataFromSupabase(); } catch (e) { console.error(e); }
+                                    hideModal();
+                                } }
+                            ], { showInput: true, inputPlaceholder: 'Template name...' });
+                        } },
+                        { text: 'Input', className: 'action-button', onClick: () => {
+                            const defName = (snip.tagName ? `${snip.tagName} snippet` : 'Snippet input');
+                            showModal('Save as Input', 'Enter a name for this input:', [
+                                { text: 'Cancel', className: 'action-button', onClick: hideModal },
+                                { text: 'Save', className: 'action-button primary', onClick: async () => {
+                                    const name = document.getElementById('confirm-modal-input').value.trim() || defName;
+                                    const row = { id: getUUID(), name, content: snip.content };
+                                    try { await upsertItem('input_gallery', row); await loadDataFromSupabase(); } catch (e) { console.error(e); }
+                                    hideModal();
+                                } }
+                            ], { showInput: true, inputPlaceholder: 'Input name...' });
+                        } },
+                        { text: 'Prompt', className: 'action-button primary', onClick: () => {
+                            const defTitle = (snip.tagName ? `${snip.tagName} snippet` : 'Snippet prompt');
+                            showModal('Save as Prompt', 'Enter a title for this prompt:', [
+                                { text: 'Cancel', className: 'action-button', onClick: hideModal },
+                                { text: 'Save', className: 'action-button primary', onClick: async () => {
+                                    const title = document.getElementById('confirm-modal-input').value.trim() || defTitle;
+                                    const now = new Date().toISOString();
+                                    const newItem = {
+                                        id: getUUID(),
+                                        promptId: getUUID(),
+                                        title,
+                                        project: projectInput.value.trim(),
+                                        llm: llmSelect.value,
+                                        content: snip.content,
+                                        comments: '',
+                                        version: '1.0',
+                                        date: now,
+                                        status: 'idea',
+                                        tags: [...tagsContainer.querySelectorAll('.prompt-tag span')].map(s => s.textContent),
+                                        temperature: 0.7,
+                                        topP: 0.9,
+                                        effort: 'Medium',
+                                        parent_id: (currentDependencies.length === 1) ? currentDependencies[0] : null,
+                                    };
+                                    prompts.push(newItem);
+                                    try { await upsertItem('prompts', mapPromptUIToDb(newItem)); await loadDataFromSupabase(); } catch (e) { console.error(e); }
+                                    renderVersionsList();
+                                    hideModal();
+                                } }
+                            ], { showInput: true, inputPlaceholder: 'Prompt title...' });
+                        } },
+                        { text: 'Cancel', className: 'action-button', onClick: hideModal }
+                    ]);
                 }
             });
 
@@ -10838,6 +11558,18 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 const nodeEl = e.target.closest('.flow-node');
                 if (!nodeEl) return;
                 const nodeId = nodeEl.dataset.nodeId;
+                // Clicking the prompt title opens Prompt Viewer modal
+                const titleEl = e.target.closest('[data-role="node-prompt-title"]');
+                if (titleEl && nodeEl.contains(titleEl)) {
+                    const node = flowNodes.find(n => n.id === nodeId);
+                    const prompt = node ? prompts.find(p => String(p.id) === String(node.promptId)) : null;
+                    if (prompt) {
+                        nodePromptTitle.textContent = `Prompt: ${prompt.title} (v${prompt.version || ''})`;
+                        nodePromptContent.textContent = prompt.content || '';
+                        nodePromptModal.classList.remove('hidden');
+                    }
+                    return;
+                }
                 const btn = e.target.closest('[data-action]');
                 if (!btn) return;
                 const action = btn.dataset.action;
@@ -10859,7 +11591,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         const node = flowNodes.find(n => n.id === nodeId);
                         const prompt = node ? prompts.find(p => String(p.id) === String(node.promptId)) : null;
                         if (!prompt) return;
-                        const { data } = await supabaseClient.from('prompt_responses').select('*').eq('prompt_version_id', prompt.id).order('run_at', { ascending: false }).limit(1);
+                        const { data: userData } = await supabaseClient.auth.getUser();
+                        const uid = userData?.user?.id; if (!uid) return;
+                        const { data } = await supabaseClient.from('prompt_responses').select('*').eq('prompt_version_id', prompt.id).eq('user_id', uid).order('run_at', { ascending: false }).limit(1);
                         if (data && data[0]) {
                             const st = nodeRuntime.get(nodeId) || {}; st.response = data[0].response_text; nodeRuntime.set(nodeId, st);
                             togglePin(nodeId, true);
@@ -10867,8 +11601,18 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         }
                     } catch {}
                 }
-                else if (action === 'pin') { togglePin(nodeId); }
+                else if (action === 'pin') {
+                    togglePin(nodeId);
+                    // Update pin button state for accessibility and styling
+                    const st = nodeRuntime.get(nodeId) || {};
+                    btn.setAttribute('aria-pressed', st.pinned ? 'true' : 'false');
+                    btn.title = st.pinned ? 'Unpin (Pinned)' : 'Pin';
+                    btn.classList.toggle('text-[--accent-mint]', !!st.pinned);
+                }
             });
+
+            // Prompt Viewer modal close
+            if (closeNodePromptBtn) closeNodePromptBtn.addEventListener('click', () => nodePromptModal.classList.add('hidden'));
 
             // Toolbar controls
             if (flowModeBypassBtn && flowModeRunAllBtn) {
