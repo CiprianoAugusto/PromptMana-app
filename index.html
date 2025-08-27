@@ -301,6 +301,42 @@
     .form-control.compact-field { font-size: 0.875rem; }
     /* Consistent (slightly slimmer) height for left/right menu buttons */
     .nav-button { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+
+    /* Calendar modal styles */
+    #calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .calendar-cell {
+        border: 1px solid var(--border-dark);
+        background-color: var(--panel-bg);
+        border-radius: 8px;
+        padding: 6px;
+        min-height: 90px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    /* Drag-over feedback for calendar cells */
+    .calendar-cell.drag-over { border-color: var(--accent-mint); box-shadow: inset 0 0 0 1px var(--accent-mint); }
+    [data-theme="light"] .calendar-cell.drag-over { border-color: var(--accent-fuchsia); box-shadow: inset 0 0 0 1px var(--accent-fuchsia); }
+    .calendar-cell .day-num { font-size: 0.75rem; color: var(--text-muted-dark); }
+    .calendar-project {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 9999px;
+        background-color: var(--accent-mint); /* dark mode: green */
+        color: #1a1a1a; /* good contrast on mint */
+        width: fit-content;
+        cursor: pointer;
+    }
+    [data-theme="light"] .calendar-project { background-color: var(--accent-fuchsia); color: #ffffff; }
+    .calendar-project:hover { filter: brightness(0.95); }
+    [data-theme="light"] .calendar-project:hover { filter: brightness(1.05); }
+    /* Project Details: prompt rows hover theme-safe */
+    .project-prompt-row:hover { background-color: #222; }
+    [data-theme="light"] .project-prompt-row:hover { background-color: #eeeedd; color: var(--text-dark); }
     /* Sidebar section separator spacing for clearer grouping */
     .section-sep { margin: 24px 0; }
         
@@ -766,13 +802,24 @@
             background-color: var(--accent-fuchsia);
             color: white;
         }
+        /* Unified "copied" feedback style (same green across the app) */
         .copy-snippet-btn.copied {
-            background-color: var(--diff-ins-bg);
-            color: white;
-            border-color: #3f6212;
+            background-color: rgba(16,185,129,0.18); /* emerald-500 tint */
+            color: #10B981;
+            border-color: #10B981;
         }
     [data-theme="light"] .copy-snippet-btn,
     [data-theme="light"] .save-snippet-btn { background-color: #eeeedd; color: var(--text-muted-dark); border-color: var(--border-dark); }
+
+        /* Action buttons share the same copied-state green */
+        .action-button.copied { background-color: rgba(16,185,129,0.18); border-color: #10B981; color: #10B981; }
+        /* Top editor copy button copied-state */
+        #copy-prompt-btn.copied { background-color: rgba(16,185,129,0.18); color: #10B981; }
+
+        /* Run Prompt: theme-aware server badge color */
+        #run-active-llm .server-badge { color: var(--accent-mint); font-weight: 600; }
+        [data-theme="light"] #run-active-llm .server-badge { color: var(--accent-fuchsia); }
+        #run-active-llm .server-badge.not { color: var(--text-muted-dark); font-weight: 500; }
         
         /* --- ESTILOS NODE FLOW --- */
         #node-flow-canvas {
@@ -915,6 +962,11 @@
                 <button id="dashboard-btn" title="Dashboard" class="p-2 rounded-full hover:bg-[#333] pointer-events-auto">
                     <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18M7 15v3m5-7v7m5-11v11" />
+                    </svg>
+                </button>
+                <button id="calendar-btn" title="Calendar" class="p-2 rounded-full hover:bg-[#333] pointer-events-auto">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3M3 11h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" />
                     </svg>
                 </button>
             </div>
@@ -1338,6 +1390,13 @@
                               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                             </svg>
                         </button>
+                        <button id="view-responses-btn" title="View saved responses for this prompt" class="p-2 rounded-md text-[--text-muted-dark] hover:text-white hover:bg-[#333]">
+                            <!-- eye icon -->
+                            <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
                         <button id="toggle-comments-btn" title="Comments" class="p-2 rounded-md text-[--text-muted-dark] hover:text-white hover:bg-[#333]">
                             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
@@ -1361,8 +1420,7 @@
                         </div>
                     </div>
                     <div class="flex-grow p-1 relative" id="editor-container">
-                        <textarea id="main-editor" placeholder="Have a new big idea to change the world with your prompt? 
-Write, right here, right now. Show me your mana!" class="form-input font-mono w-full h-full p-4 text-base leading-relaxed resize-none"></textarea>
+                        <textarea id="main-editor" placeholder="Write, right here, right now. Show me your mana!" class="form-input font-mono w-full h-full p-4 text-base leading-relaxed resize-none"></textarea>
                         <div id="syntax-overlay" class="absolute top-0 left-0 w-full h-full p-4 pointer-events-none"></div>
                         <div id="snippet-buttons-overlay" class="absolute top-0 left-0 w-full h-full p-4 pointer-events-none"></div>
                     </div>
@@ -1454,7 +1512,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                     <div id="filters-container" class="space-y-3 mb-3 flex-shrink-0">
                         <div class="relative">
-                            <input id="search-versions-input" placeholder="Search by title, project or tag..." class="form-control w-full rounded-md py-1.5 px-3 text-sm focus:ring-2">
+                            <input id="search-versions-input" placeholder="Search by title, project or tag." class="form-control w-full rounded-md py-1.5 px-3 text-sm focus:ring-2">
                         </div>
                         <div id="status-filter-container" class="flex flex-col gap-1">
                             <label for="status-filter-select" class="text-xs font-medium text-[--text-muted-dark]">Filter by Status</label>
@@ -1627,6 +1685,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             <th class="text-left p-2">Date</th>
                             <th class="text-left p-2">Rating</th>
                             <th class="text-left p-2">Comment</th>
+                                    <th class="text-left p-2">Variable</th>
                             <th class="text-left p-2">Actions</th>
                         </tr>
                     </thead>
@@ -1830,19 +1889,22 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 <label class="text-xs font-medium text-[--text-muted-dark]">GitHub Token</label>
                                 <input id="github-token-input" type="password" placeholder="ghp_..." class="form-control bg-[#111] w-full mt-1 rounded-md py-1.5 px-3 text-sm focus:ring-2">
                             </div>
-                            <div class="md:w-1/2">
-                                <label class="text-xs font-medium text-[--text-muted-dark]">Default Repo (owner/repo)</label>
-                                <input id="github-repo-input" type="text" placeholder="owner/repo" class="form-control bg-[#111] w-full mt-1 rounded-md py-1.5 px-3 text-sm focus:ring-2">
-                            </div>
+                            <!-- Default Repo removed: user selects repos from the list below -->
                             <div class="md:w-1/2 flex items-center gap-2">
                                 <button id="github-test-btn" class="action-button">Test</button>
                                 <span id="github-test-status" class="text-xs font-mono"></span>
                             </div>
-                            <div class="md:w-1/2">
-                                <button id="github-add-repo-btn" class="action-button primary w-full md:w-auto">Add repository</button>
+                            <!-- Save repo button moved below Test, as requested -->
+                            <div class="md:w-1/2 flex items-center gap-2">
+                                <button id="github-save-repo-btn" class="action-button text-xs" title="Save selected repo">Save repo</button>
                             </div>
+                            <!-- Add repository button removed (connection is account-level with classic token) -->
                         </div>
                         <hr class="border-[--border-dark]">
+                        <!-- Load repos button moved above Repositories header, below divider -->
+                        <div class="flex items-center justify-between">
+                            <button id="github-load-repos-btn" class="action-button text-xs">Load repos</button>
+                        </div>
                         <div class="flex items-center justify-between">
                             <h3 class="text-sm font-semibold">Repositories</h3>
                         </div>
@@ -1852,7 +1914,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 <button id="github-repos-toggle" class="text-left text-xs font-semibold text-[--text-muted-dark] flex items-center gap-2">
                                     <span id="github-repos-caret">▶</span> Repositories
                                 </button>
-                                <button id="github-load-repos-btn" class="action-button text-xs">Load repos</button>
+                                <!-- Controls moved: Load repos is above, Save repo under Test -->
                             </div>
                             <div id="github-available-repos" class="space-y-1 text-xs hidden"></div>
                         </div>
@@ -1909,6 +1971,68 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
         </div>
     </div>
 
+    <!-- Project Details Modal -->
+    <div id="project-details-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
+        <div class="bg-[--card-bg-dark] w-[600px] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+            <div class="p-4 border-b border-[--border-dark] flex justify-between items-center">
+                <h2 id="project-details-title" class="text-xl font-bold">Project</h2>
+                <button id="close-project-details-btn" class="p-2 rounded-full hover:bg-[#333]" title="Close">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-4 space-y-3">
+                <div>
+                    <label class="text-xs font-medium text-[--text-muted-dark]">Description</label>
+                    <textarea id="project-desc-input" class="form-input font-sans w-full p-2 rounded-md text-sm resize-y" rows="4" placeholder="Describe this project..."></textarea>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-[--text-muted-dark]">Goals</label>
+                    <div id="project-goals-list" class="space-y-2"></div>
+                    <div class="flex gap-2 mt-2">
+                        <input id="project-goal-new" class="form-control rounded-md py-1 px-2 text-sm flex-1" placeholder="New goal...">
+                        <button id="project-goal-add" class="action-button text-xs">Add</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-[--text-muted-dark]">Deadline</label>
+                    <input id="project-deadline-input" type="date" class="form-control rounded-md py-1 px-2 text-sm">
+                </div>
+                <div>
+                    <label class="text-xs font-medium text-[--text-muted-dark]">Prompts in this project</label>
+                    <div id="project-prompts-list" class="mt-2 max-h-48 overflow-auto divide-y divide-[--border-dark] rounded-md border border-[--border-dark]"></div>
+                </div>
+            </div>
+            <div class="p-4 border-t border-[--border-dark] flex justify-end gap-3">
+                <button id="project-details-cancel" class="action-button">Cancel</button>
+                <button id="project-details-save" class="action-button primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div id="calendar-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-6">
+        <div class="bg-[--card-bg-dark] w-[90vw] h-[80vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
+            <div class="p-3 border-b border-[--border-dark] flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-bold">Project Calendar</h2>
+                    <div class="flex items-center gap-2 text-xs">
+                        <button id="calendar-prev" class="action-button text-xs">Prev</button>
+                        <div id="calendar-month-label" class="text-[--text-muted-dark]"></div>
+                        <button id="calendar-next" class="action-button text-xs">Next</button>
+                    </div>
+                </div>
+                <button id="close-calendar-btn" class="p-2 rounded-full hover:bg-[#333]" title="Close">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="p-3 text-xs">
+                <div class="grid grid-cols-7 gap-2 mb-2 text-[--text-muted-dark]">
+                    <div class="text-center">Sun</div><div class="text-center">Mon</div><div class="text-center">Tue</div><div class="text-center">Wed</div><div class="text-center">Thu</div><div class="text-center">Fri</div><div class="text-center">Sat</div>
+                </div>
+                <div id="calendar-grid"></div>
+            </div>
+        </div>
+    </div>
     <!-- Modal de Templates -->
     <div id="templates-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center p-8">
     <div class="bg-[--card-bg-dark] w-[90vw] h-[90vh] rounded-lg shadow-xl border border-[--border-dark] flex flex-col">
@@ -2271,11 +2395,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             } catch {}
             if (sessionReady) {
                 setTimeout(autoLoadAllModels, 0);
+                // Ensure app data (prompts, templates, etc.) is loaded immediately
+                try { setTimeout(loadDataFromSupabase, 0); } catch {}
             } else {
                 // If not logged in, try again after login
                 try {
                     supabaseClient?.auth?.onAuthStateChange?.((event, session) => {
-                        if (session) setTimeout(autoLoadAllModels, 0);
+                        if (session) {
+                            setTimeout(autoLoadAllModels, 0);
+                            try { setTimeout(loadDataFromSupabase, 0); } catch {}
+                        }
                     });
                 } catch {}
             }
@@ -2784,6 +2913,17 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                     }
                                 });
 
+                                // Enter-to-submit on focused auth inputs
+                                const handleEnterSubmit = (e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        try { submitBtn && submitBtn.click(); } catch {}
+                                    }
+                                };
+                                if (emailInput) emailInput.addEventListener('keydown', handleEnterSubmit);
+                                if (pwdInput) pwdInput.addEventListener('keydown', handleEnterSubmit);
+                                if (pwdConfirm) pwdConfirm.addEventListener('keydown', handleEnterSubmit);
+
                                                 // Toggle modes
                                                 if (toggleModeBtn) {
                                                     toggleModeBtn.addEventListener('click', () => {
@@ -2819,8 +2959,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                                 const password = (pwdInput?.value || '').trim();
                                                                 if (!password) { statusEl.textContent = 'Informe sua senha'; submitBtn.disabled = false; return; }
                                                                                 const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                                                                                if (error) { statusEl.textContent = 'Login inválido: ' + (error.message || ''); submitBtn.disabled = false; return; }
+                                                                                if (error) { statusEl.textContent = 'Invalid login credential'; submitBtn.disabled = false; return; }
                                                                 statusEl.textContent = 'Signed in';
+                                                                // Kick off data loading immediately after sign-in
+                                                                try { setTimeout(() => { try { loadDataFromSupabase && loadDataFromSupabase(); autoLoadAllModels && autoLoadAllModels(); } catch {} }, 0); } catch {}
                                                             } else if (loginMode === 'signup') {
                                                                 const password = (pwdInput?.value || '').trim();
                                                                 const confirm = (pwdConfirm?.value || '').trim();
@@ -2868,6 +3010,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                                 // Keep auth tokens; do not clear localStorage here.
                                                 closeLoginModal();
                                                 try { document.getElementById('auth-gate-overlay')?.classList.add('hidden'); } catch {}
+                                                // Also start loading app data right away
+                                                try { setTimeout(() => { try { loadDataFromSupabase && loadDataFromSupabase(); autoLoadAllModels && autoLoadAllModels(); } catch {} }, 0); } catch {}
                                             }
                                         });
                                         // Gate on load if no active session
@@ -3261,7 +3405,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             let inputGallery = [];
             let savedFlows = [];
             let projectNames = [];
+            // Project metadata map: { [projectName]: { description: string, goals: [{text, done}], deadline: 'YYYY-MM-DD' } }
+            let projectMetaMap = {};
             let projectRepoMap = {};
+            // GitHub persisted state and cache
+            // githubRepoState: { active: string, list: Array<{ id: string, repo: string }> }
+            let githubRepoState = { active: '', list: [] };
+            // githubRepoCache: { [connId: string]: { ts: string, items: Array<{ id: string, full: string, name: string, isPrivate: boolean }> } }
+            let githubRepoCache = {};
+            // Response variables mapping
+            let responseVars = {};
             let selectedVersionId = null;
             let selectedInputId = null; // Para o modal Input Gallery
             let expandedPromptGroups = new Set();
@@ -3828,6 +3981,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const reqToggleOnlyBtn = document.getElementById('req-toggle-only');
             const saveRunResponseBtn = document.getElementById('save-run-response-btn');
             const openResponseLogBtn = document.getElementById('open-response-log-btn');
+            const viewResponsesBtn = document.getElementById('view-responses-btn');
             const responseLogModal = document.getElementById('response-log-modal');
             const closeResponseLogModalBtn = document.getElementById('close-response-log-modal');
             const respLogTbody = document.getElementById('response-log-tbody');
@@ -3996,7 +4150,19 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             function buildRunPayload() {
                 const llmId = llmSelect?.value || '';
                 const dyn = collectDynamicSettings();
-                const content = (mainEditor?.value || '').trim();
+                // Expand response-bound variables like {{response1}}
+                const expandResponseVars = (text) => {
+                    try {
+                        if (!text) return text;
+                        return String(text).replace(/\{\{([^}]+)\}\}/g, (m, name) => {
+                            const key = String(name || '').trim();
+                            const v = responseVars && responseVars[key];
+                            return v && typeof v.text === 'string' ? v.text : m;
+                        });
+                    } catch { return text; }
+                };
+                let content = (mainEditor?.value || '').trim();
+                content = expandResponseVars(content);
                 // Detect provider from the connection that owns the selected model (fallback to active/base)
                 let provider = 'openai';
                 try {
@@ -4008,6 +4174,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 let messages = Array.isArray(dyn.messages) && dyn.messages.length
                     ? dyn.messages.filter(m => (m.content||'').trim().length)
                     : [];
+                if (messages.length) {
+                    try { messages = messages.map(m => ({ ...m, content: expandResponseVars(m.content) })); } catch {}
+                }
                 if (!messages.length && content) messages = [{ role: 'user', content }];
 
                 // System messages remain inline; Anthropic also supports top-level system
@@ -4309,9 +4478,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const base = conn?.base || (window.__PM_LLM_BASE || '');
                     let host = '';
                     try { host = base ? new URL(base).hostname : ''; } catch {}
-                    const model = selModel;
-                    const serverBadge = conn && conn.server ? ' • server' : ' • not server';
-                    runActiveLlm.textContent = `Model: ${model}${host ? ' • ' + host : ''}${serverBadge}`;
+                    const model = selModel || '';
+                    const serverLabel = conn && conn.server ? '<span class="server-badge">server</span>' : '<span class="server-badge not">not server</span>';
+                    runActiveLlm.innerHTML = `Model: ${escapeHtml(model)}${host ? ' • ' + escapeHtml(host) : ''} • ${serverLabel}`;
                 } catch { runActiveLlm.textContent = ''; }
                 // If no model is selected, surface the LLM drawer to help selection
                 if (!llmSelect || !llmSelect.value) {
@@ -4325,8 +4494,20 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             if (runCancelBtn) runCancelBtn.addEventListener('click', closeRunModal);
             if (closeRunModalBtn) closeRunModalBtn.addEventListener('click', closeRunModal);
             if (runModal) runModal.addEventListener('click', (e) => { if (e.target === runModal) closeRunModal(); });
-            if (copyRunReqBtn) copyRunReqBtn.addEventListener('click', async () => { try { await navigator.clipboard.writeText(runRequestView.textContent || ''); } catch {} });
-            if (copyRunResBtn) copyRunResBtn.addEventListener('click', async () => { try { await navigator.clipboard.writeText(runResponseView.textContent || ''); } catch {} });
+            if (copyRunReqBtn) copyRunReqBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(runRequestView.textContent || '');
+                    copyRunReqBtn.classList.add('copied');
+                    setTimeout(() => copyRunReqBtn.classList.remove('copied'), 1500);
+                } catch {}
+            });
+            if (copyRunResBtn) copyRunResBtn.addEventListener('click', async () => {
+                try {
+                    await navigator.clipboard.writeText(runResponseView.textContent || '');
+                    copyRunResBtn.classList.add('copied');
+                    setTimeout(() => copyRunResBtn.classList.remove('copied'), 1500);
+                } catch {}
+            });
             if (reqToggleFullBtn && reqToggleOnlyBtn) {
                 const syncReqToggleUI = () => {
                     if (reqPreviewMode === 'only') {
@@ -4389,14 +4570,21 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             }
             if (saveRunResponseBtn) saveRunResponseBtn.addEventListener('click', () => { saveCurrentResponse(); });
 
-            function openResponseLog() { if (responseLogModal) { responseLogModal.classList.remove('hidden'); loadResponseLog(); } }
+            function openResponseLog(opts) { if (responseLogModal) { responseLogModal.classList.remove('hidden'); loadResponseLog(opts || {}); } }
             function closeResponseLog() { if (responseLogModal) responseLogModal.classList.add('hidden'); }
-            if (openResponseLogBtn) openResponseLogBtn.addEventListener('click', openResponseLog);
+            if (openResponseLogBtn) openResponseLogBtn.addEventListener('click', () => openResponseLog());
             if (closeResponseLogModalBtn) closeResponseLogModalBtn.addEventListener('click', closeResponseLog);
             if (responseLogMenuBtn) responseLogMenuBtn.addEventListener('click', () => { openResponseLog(); });
+            if (viewResponsesBtn) viewResponsesBtn.addEventListener('click', () => {
+                try {
+                    const id = selectedVersionId ? String(selectedVersionId) : null;
+                    if (!id) { openResponseLog(); return; }
+                    openResponseLog({ promptId: id });
+                } catch { openResponseLog(); }
+            });
             if (responseLogModal) responseLogModal.addEventListener('click', (e) => { if (e.target === responseLogModal) closeResponseLog(); });
 
-            async function loadResponseLog() {
+            async function loadResponseLog({ promptId = null } = {}) {
                 if (!supabaseClient) return;
                 const { data: userData } = await supabaseClient.auth.getUser();
                 const uid = userData?.user?.id;
@@ -4407,6 +4595,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     .eq('user_id', uid)
                     .order('run_at', { ascending: false })
                     .range(respLogPage * RESP_LOG_PAGE_SIZE, (respLogPage + 1) * RESP_LOG_PAGE_SIZE - 1);
+                if (promptId) { query = query.eq('prompt_version_id', promptId); }
                 if (q) {
                     query = query.ilike('prompt_title', `%${q}%`);
                 }
@@ -4443,13 +4632,22 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         </td>
                         <td class="p-2 align-top w-[30%]">
                             <div class="flex items-center gap-1">
-                                <input type="text" class="form-control text-xs py-1 px-2 rounded-md w-full" placeholder="Add a comment" value="${escapeAttr(row.comment || '')}">
+                                <input type="text" class="form-control text-xs py-1 px-2 rounded-md w-full comment-input" placeholder="Add a comment" value="${escapeAttr(row.comment || '')}">
                                 <button class="action-button text-xs save-comment">Save</button>
                             </div>
                         </td>
                         <td class="p-2 align-top">
-                            <button class="action-button text-xs view-text">View</button>
-                            <button class="action-button text-xs delete-row">Delete</button>
+                            <div class="flex items-center gap-1">
+                                <input type="text" class="form-control text-xs py-1 px-2 rounded-md w-40 var-name-input" placeholder="Variable (e.g., response1)">
+                                <button class="action-button text-xs bind-var">Bind</button>
+                                <button class="action-button text-xs unbind-var">Unbind</button>
+                            </div>
+                        </td>
+                        <td class="p-2 align-top">
+                            <div class="flex items-center gap-1">
+                                <button class="action-button text-xs view-text">View</button>
+                                <button class="action-button text-xs delete-row">Delete</button>
+                            </div>
                         </td>`;
                     // Wire events
                     tr.querySelectorAll('.star-btn').forEach(btn => {
@@ -4461,13 +4659,15 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                             loadResponseLog();
                         });
                     });
-                    const commentInput = tr.querySelector('input');
+                    // Save comment handler
+                    const commentInput = tr.querySelector('.comment-input');
                     const saveCommentBtn = tr.querySelector('.save-comment');
                     if (saveCommentBtn) saveCommentBtn.addEventListener('click', async () => {
                         const val = commentInput?.value || '';
                         const { data: userData } = await supabaseClient.auth.getUser();
                         const uid = userData?.user?.id; if (!uid) return;
                         await supabaseClient.from('prompt_responses').update({ comment: val }).eq('id', row.id).eq('user_id', uid);
+                        if (respLogStatus) { respLogStatus.textContent = 'Saved'; setTimeout(()=>{ try { respLogStatus.textContent=''; } catch{} }, 1200); }
                     });
                     const viewBtn = tr.querySelector('.view-text');
                     if (viewBtn) viewBtn.addEventListener('click', () => {
@@ -4486,6 +4686,46 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         const uid = userData?.user?.id; if (!uid) return;
                         await supabaseClient.from('prompt_responses').delete().eq('id', row.id).eq('user_id', uid);
                         loadResponseLog();
+                    });
+                    // Bind/Unbind variable controls
+                    const varInput = tr.querySelector('input.var-name-input');
+                    const bindBtn = tr.querySelector('.bind-var');
+                    const unbindBtn = tr.querySelector('.unbind-var');
+                    // Pre-fill if this row is currently bound
+                    try {
+                        const existingName = Object.keys(responseVars || {}).find(k => {
+                            const v = responseVars[k];
+                            return v && (String(v.response_id || v.id) === String(row.id));
+                        });
+                        if (existingName && varInput) varInput.value = existingName;
+                    } catch {}
+                    if (bindBtn) bindBtn.addEventListener('click', async () => {
+                        try {
+                            const name = (varInput?.value || '').trim();
+                            if (!name) return;
+                            responseVars = responseVars || {};
+                            responseVars[name] = {
+                                response_id: row.id,
+                                prompt_version_id: row.prompt_version_id || null,
+                                text: row.response_text || '',
+                                updated_at: new Date().toISOString()
+                            };
+                            updateGlobalList('response_vars', responseVars);
+                            const token = `{{${name}}}`;
+                            if (!varLibrary.includes(token)) { varLibrary.push(token); updateGlobalList('var_library', varLibrary); }
+                            if (respLogStatus) { respLogStatus.textContent = `Bound ${name}`; setTimeout(()=>{ try { respLogStatus.textContent=''; } catch{} }, 1200); }
+                        } catch {}
+                    });
+                    if (unbindBtn) unbindBtn.addEventListener('click', async () => {
+                        try {
+                            const key = Object.keys(responseVars || {}).find(k => String((responseVars[k]?.response_id || responseVars[k]?.id) || '') === String(row.id));
+                            if (key) {
+                                delete responseVars[key];
+                                updateGlobalList('response_vars', responseVars);
+                                if (varInput) varInput.value = '';
+                                if (respLogStatus) { respLogStatus.textContent = 'Unbound'; setTimeout(()=>{ try { respLogStatus.textContent=''; } catch{} }, 1200); }
+                            }
+                        } catch {}
                     });
                     respLogTbody.appendChild(tr);
                 });
@@ -5092,7 +5332,39 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     varLibrary = G.find(l => l.name === 'var_library')?.data || [];
                     llmList = G.find(l => l.name === 'llm_list')?.data || {};
                     projectNames = G.find(l => l.name === 'projects')?.data || [];
+                    projectMetaMap = G.find(l => l.name === 'project_meta')?.data || {};
                     projectRepoMap = G.find(l => l.name === 'project_repo_map')?.data || {};
+                    // Load GitHub state/cache from server
+                    githubRepoState = G.find(l => l.name === 'github_repo_state')?.data || { active: '', list: [] };
+                    githubRepoCache = G.find(l => l.name === 'github_repo_cache')?.data || {};
+                    // Hydrate GitHub state into in-memory mirrors so UI works without localStorage
+                    try {
+                        const prevActive = (typeof window.__PM_GH_ACTIVE === 'string') ? window.__PM_GH_ACTIVE : '';
+                        if (githubRepoState && Array.isArray(githubRepoState.list)) {
+                            const list = githubRepoState.list.map(({ id, repo }) => ({ id, repo, server: true }));
+                            window.__PM_GH_REPO_LIST = list;
+                            let activeId = githubRepoState.active || '';
+                            if (!activeId && list.length) {
+                                activeId = list[0].id;
+                                try {
+                                    githubRepoState = { active: activeId, list: githubRepoState.list.slice(0) };
+                                    if (typeof updateGlobalList === 'function') { updateGlobalList('github_repo_state', githubRepoState); }
+                                } catch {}
+                            }
+                            window.__PM_GH_ACTIVE = activeId || '';
+                            try { renderGithubRepoList(); } catch {}
+                            // Auto-load repos when an active connection becomes available and user is logged in
+                            try {
+                                const { data } = await supabaseClient.auth.getSession();
+                                const becameActive = !!activeId && activeId !== prevActive;
+                                if (data?.session && becameActive) {
+                                    try { loadAccessibleRepos(document.getElementById('github-available-repos')); } catch {}
+                                    try { loadAccessibleRepos(document.getElementById('dock-github-available-repos')); } catch {}
+                                }
+                            } catch {}
+                        }
+                    } catch {}
+                    responseVars = G.find(l => l.name === 'response_vars')?.data || {};
                     try {
                         const cacheMap = G.find(l => l.name === 'llm_models_cache')?.data || {};
                         Object.entries(cacheMap).forEach(([connId, ids]) => { try { localStorage.setItem(modelsCacheKey(connId), JSON.stringify(ids || [])); } catch {} });
@@ -5106,6 +5378,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     } catch {}
                     // All done: mark DB as Online
             setDbStatusOnline();
+                    // Render Versions immediately after data loads
+                    try { renderVersionsList(); } catch {}
                 } catch (error) {
                     console.error('Error loading data from Supabase via dataService:', error);
             setDbStatusOffline();
@@ -5171,6 +5445,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const saveFlowsToStorage = () => {};
             const saveProjectNamesToStorage = () => {};
             const saveProjectRepoMapToStorage = () => {};
+            const saveProjectMetaMapToStorage = () => {};
 
 
             // --- LOGIC FUNCTIONS ---
@@ -5561,9 +5836,10 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     
                     const headerRow = document.createElement('div');
                     headerRow.className = 'flex items-center justify-between border-b border-[--border-dark] pb-2 mb-3';
-                    const projectTitle = document.createElement('h3');
-                    projectTitle.className = 'text-lg font-bold text-[--accent-fuchsia]';
+                    const projectTitle = document.createElement('button');
+                    projectTitle.className = 'text-left text-lg font-bold text-[--accent-fuchsia] hover:underline';
                     projectTitle.textContent = project;
+                    projectTitle.addEventListener('click', () => openProjectDetails(project));
                     headerRow.appendChild(projectTitle);
                     // Repo selector on the right
                     const repoWrap = document.createElement('div');
@@ -5656,6 +5932,219 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     projectsListContainer.appendChild(projectWrapper);
                 });
             };
+
+            // ------- Project Details Modal logic -------
+            const projectDetailsModal = document.getElementById('project-details-modal');
+            const projectDetailsTitle = document.getElementById('project-details-title');
+            const projectDescInput = document.getElementById('project-desc-input');
+            const projectGoalsList = document.getElementById('project-goals-list');
+            const projectGoalNew = document.getElementById('project-goal-new');
+            const projectGoalAdd = document.getElementById('project-goal-add');
+            const projectDeadlineInput = document.getElementById('project-deadline-input');
+            const projectPromptsList = document.getElementById('project-prompts-list');
+            const projectDetailsCancel = document.getElementById('project-details-cancel');
+            const projectDetailsSave = document.getElementById('project-details-save');
+            const closeProjectDetailsBtn = document.getElementById('close-project-details-btn');
+            let activeProjectForDetails = null;
+
+            function renderGoals(goals) {
+                projectGoalsList.innerHTML = '';
+                (goals || []).forEach((g, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center gap-2';
+                    row.innerHTML = `
+                        <input type="checkbox" class="pm-checkbox" ${g.done ? 'checked' : ''} data-idx="${idx}" aria-label="Mark goal as done">
+                        <input type="text" value="${S(g.text || '')}" data-idx="${idx}" class="form-control flex-1 rounded-md py-1 px-2 text-sm">
+                        <button class="action-button text-xs" data-del="${idx}">Del</button>
+                    `;
+                    projectGoalsList.appendChild(row);
+                });
+            }
+
+            function openProjectDetails(projectName) {
+                activeProjectForDetails = projectName;
+                const meta = projectMetaMap[projectName] || { description: '', goals: [], deadline: '' };
+                projectDetailsTitle.textContent = projectName;
+                projectDescInput.value = meta.description || '';
+                projectDeadlineInput.value = meta.deadline || '';
+                renderGoals(Array.isArray(meta.goals) ? meta.goals : []);
+                // Render prompts list
+                try {
+                    const list = (prompts || []).filter(p => (p.project || '') === projectName).sort((a,b) => a.title.localeCompare(b.title));
+                    if (projectPromptsList) {
+                        projectPromptsList.innerHTML = list.length ? '' : '<div class="text-xs text-[--text-muted-dark] p-2">No prompts in this project.</div>';
+                        list.forEach(p => {
+                            const row = document.createElement('div');
+                            row.className = 'project-prompt-row flex items-center justify-between p-2';
+                            row.innerHTML = `
+                                <div class="min-w-0 mr-2">
+                                    <div class="truncate text-sm font-medium">${S(p.title)}</div>
+                                    <div class="text-[10px] text-[--text-muted-dark]">v${S(p.version)} • ${S(p.llm || 'N/A')}</div>
+                                </div>
+                                <button class="action-button text-xs" data-open="${S(String(p.id))}">Open</button>
+                            `;
+                            projectPromptsList.appendChild(row);
+                        });
+                        projectPromptsList.addEventListener('click', (e) => {
+                            const btn = e.target.closest('[data-open]');
+                            if (btn) {
+                                const id = btn.getAttribute('data-open');
+                                if (id) { try { loadVersionIntoEditor(id); } catch {} }
+                                closeProjectDetails();
+                            }
+                        }, { once: true });
+                    }
+                } catch {}
+                projectDetailsModal.classList.remove('hidden');
+            }
+            function closeProjectDetails() { projectDetailsModal.classList.add('hidden'); }
+
+            projectGoalsList.addEventListener('change', (e) => {
+                const meta = projectMetaMap[activeProjectForDetails] || { description: '', goals: [], deadline: '' };
+                if (e.target.matches('input[type="checkbox"]')) {
+                    const idx = parseInt(e.target.dataset.idx, 10);
+                    if (!meta.goals[idx]) meta.goals[idx] = { text: '', done: false };
+                    meta.goals[idx].done = !!e.target.checked;
+                }
+                if (e.target.matches('input[type="text"]')) {
+                    const idx = parseInt(e.target.dataset.idx, 10);
+                    if (!meta.goals[idx]) meta.goals[idx] = { text: '', done: false };
+                    meta.goals[idx].text = e.target.value;
+                }
+                projectMetaMap[activeProjectForDetails] = meta;
+            });
+            projectGoalsList.addEventListener('click', (e) => {
+                const del = e.target.closest('[data-del]');
+                if (del) {
+                    const idx = parseInt(del.getAttribute('data-del'), 10);
+                    const meta = projectMetaMap[activeProjectForDetails] || { description: '', goals: [], deadline: '' };
+                    (meta.goals || []).splice(idx, 1);
+                    projectMetaMap[activeProjectForDetails] = meta;
+                    renderGoals(meta.goals);
+                }
+            });
+            if (projectGoalAdd) projectGoalAdd.addEventListener('click', () => {
+                const txt = (projectGoalNew.value || '').trim();
+                if (!activeProjectForDetails || !txt) return;
+                const meta = projectMetaMap[activeProjectForDetails] || { description: '', goals: [], deadline: '' };
+                meta.goals = Array.isArray(meta.goals) ? meta.goals : [];
+                meta.goals.push({ text: txt, done: false });
+                projectMetaMap[activeProjectForDetails] = meta;
+                projectGoalNew.value = '';
+                renderGoals(meta.goals);
+            });
+            if (projectDetailsCancel) projectDetailsCancel.addEventListener('click', closeProjectDetails);
+            if (closeProjectDetailsBtn) closeProjectDetailsBtn.addEventListener('click', closeProjectDetails);
+            if (projectDetailsSave) projectDetailsSave.addEventListener('click', async () => {
+                if (!activeProjectForDetails) return;
+                const meta = projectMetaMap[activeProjectForDetails] || { description: '', goals: [], deadline: '' };
+                meta.description = projectDescInput.value || '';
+                meta.deadline = projectDeadlineInput.value || '';
+                projectMetaMap[activeProjectForDetails] = meta;
+                saveProjectMetaMapToStorage();
+                try { await updateGlobalList('project_meta', projectMetaMap); } catch {}
+                closeProjectDetails();
+            });
+
+            // ------- Calendar Modal logic -------
+            const calendarBtn = document.getElementById('calendar-btn');
+            const calendarModal = document.getElementById('calendar-modal');
+            const closeCalendarBtn = document.getElementById('close-calendar-btn');
+            const calendarPrev = document.getElementById('calendar-prev');
+            const calendarNext = document.getElementById('calendar-next');
+            const calendarGrid = document.getElementById('calendar-grid');
+            const calendarMonthLabel = document.getElementById('calendar-month-label');
+            let calCursor = new Date();
+            let dragInProgressProject = null;
+
+            function monthKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+            function fmtDate(date) { return date.toISOString().slice(0,10); }
+
+            function renderCalendar() {
+                calendarGrid.innerHTML = '';
+                const year = calCursor.getFullYear();
+                const month = calCursor.getMonth();
+                const first = new Date(year, month, 1);
+                const startDay = new Date(first);
+                startDay.setDate(first.getDate() - first.getDay()); // start on Sunday
+                calendarMonthLabel.textContent = calCursor.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+                for (let i=0;i<42;i++) {
+                    const d = new Date(startDay);
+                    d.setDate(startDay.getDate() + i);
+                    const cell = document.createElement('div');
+                    cell.className = 'calendar-cell';
+                    cell.dataset.date = fmtDate(d);
+                    // Enable drop target behavior
+                    cell.addEventListener('dragover', (e) => { e.preventDefault(); cell.classList.add('drag-over'); });
+                    cell.addEventListener('dragleave', () => { cell.classList.remove('drag-over'); });
+                    cell.addEventListener('drop', async (e) => {
+                        e.preventDefault();
+                        cell.classList.remove('drag-over');
+                        const proj = e.dataTransfer.getData('text/plain');
+                        if (!proj) return;
+                        const dateStr = cell.dataset.date;
+                        const meta = projectMetaMap[proj] || { description: '', goals: [], deadline: '' };
+                        meta.deadline = dateStr;
+                        projectMetaMap[proj] = meta;
+                        saveProjectMetaMapToStorage();
+                        try { await updateGlobalList('project_meta', projectMetaMap); } catch {}
+                        renderCalendar();
+                        // prevent accidental click on the chip after a drag
+                        setTimeout(() => { dragInProgressProject = null; }, 0);
+                    });
+                    const dayNum = document.createElement('div');
+                    dayNum.className = 'day-num';
+                    dayNum.textContent = String(d.getDate());
+                    cell.appendChild(dayNum);
+                    // list projects with this deadline
+                    const items = Object.entries(projectMetaMap).filter(([name, meta]) => (meta && meta.deadline === fmtDate(d)));
+                    items.forEach(([name]) => {
+                        const chip = document.createElement('div');
+                        chip.className = 'calendar-project';
+                        chip.setAttribute('draggable', 'true');
+                        chip.textContent = name;
+                        chip.title = name;
+                        chip.addEventListener('dragstart', (e) => {
+                            dragInProgressProject = name;
+                            try { e.dataTransfer.setData('text/plain', name); e.dataTransfer.effectAllowed = 'move'; } catch {}
+                        });
+                            // Support dropping onto chips as well (forward to parent cell)
+                            chip.addEventListener('dragover', (e) => { e.preventDefault(); if (chip.parentElement) chip.parentElement.classList.add('drag-over'); });
+                            chip.addEventListener('dragleave', () => { if (chip.parentElement) chip.parentElement.classList.remove('drag-over'); });
+                            chip.addEventListener('drop', async (e) => {
+                                e.preventDefault();
+                                if (chip.parentElement) chip.parentElement.classList.remove('drag-over');
+                                const proj = e.dataTransfer.getData('text/plain');
+                                if (!proj || !chip.parentElement) return;
+                                const dateStr = chip.parentElement.dataset.date;
+                                const meta = projectMetaMap[proj] || { description: '', goals: [], deadline: '' };
+                                meta.deadline = dateStr;
+                                projectMetaMap[proj] = meta;
+                                saveProjectMetaMapToStorage();
+                                try { await updateGlobalList('project_meta', projectMetaMap); } catch {}
+                                renderCalendar();
+                                setTimeout(() => { dragInProgressProject = null; }, 0);
+                            });
+                        chip.addEventListener('dragend', () => { setTimeout(() => { dragInProgressProject = null; }, 0); });
+                        chip.addEventListener('click', () => {
+                            if (dragInProgressProject === name) return; // suppress click after drag
+                            closeCalendar();
+                            openProjectDetails(name);
+                        });
+                        cell.appendChild(chip);
+                    });
+                    if (d.getMonth() !== month) cell.style.opacity = '0.4';
+                    calendarGrid.appendChild(cell);
+                }
+            }
+            function openCalendar() { calendarModal.classList.remove('hidden'); renderCalendar(); }
+            function closeCalendar() { calendarModal.classList.add('hidden'); }
+            if (calendarBtn) calendarBtn.addEventListener('click', openCalendar);
+            if (closeCalendarBtn) closeCalendarBtn.addEventListener('click', closeCalendar);
+            if (calendarPrev) calendarPrev.addEventListener('click', () => { calCursor.setMonth(calCursor.getMonth()-1); renderCalendar(); });
+            if (calendarNext) calendarNext.addEventListener('click', () => { calCursor.setMonth(calCursor.getMonth()+1); renderCalendar(); });
+            // Close calendar when clicking outside the content (on overlay)
+            if (calendarModal) calendarModal.addEventListener('click', (e) => { if (e.target === calendarModal) closeCalendar(); });
 
             const renderTemplatesGrid = () => {
                 const selectedProject = (typeof templatesProjectFilter !== 'undefined' && templatesProjectFilter) ? templatesProjectFilter.value : 'all';
@@ -6163,6 +6652,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             const llmRebuildListBtn = null; // removed
             const llmAvailableModelsEl = document.getElementById('llm-available-models');
             const ghLoadReposBtn = document.getElementById('github-load-repos-btn');
+            const ghSaveRepoBtn = document.getElementById('github-save-repo-btn');
             const ghAvailableReposEl = document.getElementById('github-available-repos');
             const ghReposToggle = document.getElementById('github-repos-toggle');
             const ghReposCaret = document.getElementById('github-repos-caret');
@@ -6477,7 +6967,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
         }
 
         // ===== API STATUS helpers =====
-        async function listServerApis() {
+    async function listServerApis() {
             const baseFn = FINAL_SUPABASE_URL.replace(/\/$/, '') + '/functions/v1';
             const headers = await buildFnHeaders();
             await detectFnVariants();
@@ -6491,8 +6981,22 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 }
             } catch {}
             try {
-                const conns = (typeof getLlmConnections === 'function') ? getLlmConnections() : [];
-                return conns.filter(c => c && c.server).map(c => ({ id: c.id, label: c.label || 'LLM', base: c.base || '', provider: (typeof detectProvider === 'function' ? detectProvider(c.base || '') : 'openai'), type: 'llm' }));
+                const llmConns = (typeof getLlmConnections === 'function') ? getLlmConnections() : [];
+                const llm = llmConns.filter(c => c && c.server).map(c => ({ id: c.id, label: c.label || 'LLM', base: c.base || '', provider: (typeof detectProvider === 'function' ? detectProvider(c.base || '') : 'openai'), type: 'llm' }));
+                // Discover GitHub server connections from memory/state mirrors (even if no repo saved yet)
+                const ghMem = Array.isArray(window.__PM_GH_REPO_LIST) ? window.__PM_GH_REPO_LIST : [];
+                const ghState = (typeof githubRepoState !== 'undefined' && githubRepoState && Array.isArray(githubRepoState.list)) ? githubRepoState.list : [];
+                const merged = new Map();
+                [...ghMem, ...ghState].forEach(it => { if (it && it.id) merged.set(it.id, Object.assign({}, merged.get(it.id) || {}, it)); });
+                // Include active GitHub connection id even if list is empty
+                try {
+                    const activeId = (typeof githubRepoState !== 'undefined' && githubRepoState && githubRepoState.active) ? githubRepoState.active : (typeof window.__PM_GH_ACTIVE === 'string' ? window.__PM_GH_ACTIVE : '');
+                    if (activeId && !merged.has(activeId)) merged.set(activeId, { id: activeId, server: true });
+                } catch {}
+                const gh = Array.from(merged.values())
+                    .filter(it => it && it.server)
+                    .map(it => ({ id: it.id, label: 'GitHub', base: 'https://api.github.com', provider: 'github', type: 'github' }));
+                return [...llm, ...gh];
             } catch { return []; }
         }
 
@@ -6500,6 +7004,13 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
             try {
                 const base = FINAL_SUPABASE_URL.replace(/\/$/, '') + '/functions/v1';
                 const headers = await buildFnHeaders();
+                if (conn.type === 'github') {
+                    const body = { conn_id: conn.id, path: 'user', method: 'GET' };
+                    const res = await fetch(base + '/proxy-github-conn', { method: 'POST', headers, body: JSON.stringify(body) });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return { ok: true };
+                }
+                // default LLM probe
                 const body = { conn_id: conn.id, path: 'models', method: 'GET' };
                 const res = await fetch(base + '/proxy-llm', { method: 'POST', headers, body: JSON.stringify(body) });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -6522,6 +7033,14 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const onColor = isLight ? 'var(--accent-fuchsia)' : 'var(--accent-mint)';
                     const offColor = 'var(--accent-red)';
                     apiStatusPill.innerHTML = `API STATUS: ${on}/${total} [<span style="color: ${onColor}">${on}</span>/<span style="color: ${offColor}">${off}</span>]`;
+                    // Make pill green if any API is online; red if we have APIs but none online; neutral if none configured
+                    if (on > 0) {
+                        apiStatusPill.style.color = onColor;
+                    } else if (total > 0) {
+                        apiStatusPill.style.color = offColor;
+                    } else {
+                        apiStatusPill.style.color = '';
+                    }
                 }
                 if (apiStatusSummary) {
                     const isLight = document.documentElement.getAttribute('data-theme') === 'light';
@@ -6549,6 +7068,9 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 apiStatusModal?.classList.remove('hidden');
                 refreshApiStatus().catch(() => {});
             });
+            // Trigger initial status refresh and keep it in sync with auth changes
+            try { refreshApiStatus(); } catch {}
+            try { supabaseClient?.auth?.onAuthStateChange?.(() => { refreshApiStatus().catch(() => {}); }); } catch {}
         }
         if (closeApiStatusModalBtn) closeApiStatusModalBtn.addEventListener('click', () => apiStatusModal?.classList.add('hidden'));
         if (apiStatusModal) apiStatusModal.addEventListener('click', (e) => { if (e.target === apiStatusModal) apiStatusModal.classList.add('hidden'); });
@@ -6584,9 +7106,23 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
         }
 
             function getActiveGithubConn() {
-                const list = Array.isArray(window.__PM_GH_MULTI) ? window.__PM_GH_MULTI : [];
-                const activeId = window.__PM_GH_ACTIVE;
-                return list.find(i => i.id === activeId) || null;
+                try {
+                    // Read persisted (may be sandboxed) and memory mirrors
+                    const lsList = (() => { try { return JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]'); } catch { return []; } })();
+                    const lsActive = (() => { try { return localStorage.getItem(API_KEYS.gh_active) || ''; } catch { return ''; } })();
+                    const memList = Array.isArray(window.__PM_GH_REPO_LIST) ? window.__PM_GH_REPO_LIST : [];
+                    const memActive = (typeof window.__PM_GH_ACTIVE === 'string' && window.__PM_GH_ACTIVE) ? window.__PM_GH_ACTIVE : '';
+                    const activeId = lsActive || memActive || '';
+                    // Merge by id, prefer memory props (includes server: true from hydration)
+                    const map = new Map();
+                    (lsList || []).forEach(it => { if (it && it.id) map.set(it.id, Object.assign({}, it)); });
+                    (memList || []).forEach(it => { if (it && it.id) map.set(it.id, Object.assign({}, map.get(it.id) || {}, it)); });
+                    const mergedList = Array.from(map.values());
+                    // If nothing merged, fall back to whichever list has items
+                    const source = mergedList.length ? mergedList : ((memList && memList.length) ? memList : lsList);
+                    const found = source.find(i => i && i.id === activeId) || source[0] || null;
+                    return found || null;
+                } catch { return null; }
             }
             async function githubRequest(path, init = {}) {
                 // Proxy-only: require Supabase
@@ -6839,12 +7375,26 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             const testGitHub = async (_token, connId = null) => {
                 try {
-                    if (!FINAL_SUPABASE_URL || !FINAL_SUPABASE_KEY) return false;
-                    if (!connId) return false; // require server-stored connection
-                    const fnUrl = FINAL_SUPABASE_URL.replace(/\/$/, '') + '/functions/v1';
-                    const headers = await buildFnHeaders();
-                    const res = await fetch(fnUrl + '/proxy-github-conn', { method: 'POST', headers, body: JSON.stringify({ conn_id: connId, path: 'user', method: 'GET' }) });
-                    return res.ok;
+                    // Prefer testing a server-stored connection when provided
+                    if (connId) {
+                        if (!FINAL_SUPABASE_URL || !FINAL_SUPABASE_KEY) return false;
+                        const fnUrl = FINAL_SUPABASE_URL.replace(/\/$/, '') + '/functions/v1';
+                        const headers = await buildFnHeaders();
+                        const res = await fetch(fnUrl + '/proxy-github-conn', { method: 'POST', headers, body: JSON.stringify({ conn_id: connId, path: 'user', method: 'GET' }) });
+                        return res.ok;
+                    }
+                    // Fallback: test raw token directly against GitHub API (no storage)
+                    const token = (_token || '').trim();
+                    if (!token) return false;
+                    const r = await fetch('https://api.github.com/user', {
+                        method: 'GET',
+                        headers: {
+                            'accept': 'application/vnd.github+json',
+                            'x-github-api-version': '2022-11-28',
+                            'authorization': `Bearer ${token}`,
+                        }
+                    });
+                    return r.ok;
                 } catch { return false; }
             };
 
@@ -6934,33 +7484,70 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
                 // GitHub test and persist
                 if (githubTestBtn) githubTestBtn.addEventListener('click', async () => {
-                    saveIfPresent(githubRepoInput, API_KEYS.gh_repo);
-                    const token = githubTokenInput.value.trim();
-                    const repo  = githubRepoInput.value.trim();
-                    // Encourage server-stored connection for tests
+                    // Default repo removed; only token is required
+                    const token = (githubTokenInput?.value || '').trim();
                     let ok = false;
+                    let usedServerConn = false;
                     try {
                         const active = getActiveGithubConn();
-                        if (active && active.server) ok = await testGitHub(null, active.id);
-                        else ok = await testGitHub(token);
+                        if (active && active.server) { ok = await testGitHub(null, active.id); usedServerConn = true; }
+                        else { ok = await testGitHub(token); }
                     } catch { ok = false; }
-                    setStatus(githubTestStatus, ok, 'OK', 'Failed');
-                    // Auto-save on server if requested
-                    if (ok) {
+                    if (githubTestStatus) {
+                        // Provide clearer feedback
+                        githubTestStatus.textContent = ok ? (usedServerConn ? 'OK' : 'OK (not saved)') : 'Failed';
+                        githubTestStatus.style.color = ok ? 'var(--accent-mint)' : 'var(--accent-red)';
+                    }
+                    // If ok and user is logged in, persist connection on server automatically
+                    if (ok && !usedServerConn) {
                         try {
+                            const hasAuth = !!(await supabaseClient?.auth?.getSession())?.data?.session?.access_token;
+                            if (!hasAuth) {
+                                // Hint user to login to save connection
+                                if (githubTestStatus) {
+                                    githubTestStatus.textContent = 'OK (login to save)';
+                                    githubTestStatus.style.color = 'var(--accent-mint)';
+                                }
+                                return;
+                            }
                             await detectFnVariants();
                             const baseFn = FINAL_SUPABASE_URL.replace(/\/$/, '') + '/functions/v1';
                             const headersFn = await buildFnHeaders();
-                            const res = await fetch(baseFn + '/connections-manager', { method: 'POST', headers: headersFn, body: JSON.stringify({ type: 'github', label: repo || 'repo', base_url: repo, api_key: token }) });
+                            // connections-manager validates base_url as a proper URL; for GitHub use the API base URL
+                            const res = await fetch(baseFn + '/connections-manager', { method: 'POST', headers: headersFn, body: JSON.stringify({ type: 'github', label: 'GitHub', base_url: 'https://api.github.com', api_key: token, provider: 'github' }) });
                             if (res.ok) {
                                 const { id } = await res.json();
-                                const list = JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]');
-                                if (!list.some(i => i.id === id)) list.push({ id, repo, server: true });
-                                localStorage.setItem(API_KEYS.gh_multi, JSON.stringify(list));
-                                if (!localStorage.getItem(API_KEYS.gh_active)) localStorage.setItem(API_KEYS.gh_active, id);
+                                // Persist to localStorage (best-effort)
+                                try {
+                                    const list = JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]');
+                                    if (!list.some(i => i.id === id)) list.push({ id, repo: '', server: true });
+                                    localStorage.setItem(API_KEYS.gh_multi, JSON.stringify(list));
+                                    localStorage.setItem(API_KEYS.gh_active, id);
+                                } catch {}
+                                // Mirror to in-memory globals for cloud-only mode
+                                try {
+                                    const mem = Array.isArray(window.__PM_GH_REPO_LIST) ? window.__PM_GH_REPO_LIST.slice(0) : [];
+                                    if (!mem.some(i => i.id === id)) mem.push({ id, repo: '', server: true });
+                                    window.__PM_GH_REPO_LIST = mem;
+                                    window.__PM_GH_ACTIVE = id;
+                                } catch {}
+                                // Persist to Supabase github_repo_state so hydration finds active even without repo
+                                try {
+                                    githubRepoState = githubRepoState || { active: '', list: [] };
+                                    const sList = Array.isArray(githubRepoState.list) ? githubRepoState.list.slice(0) : [];
+                                    if (!sList.some(i => i.id === id)) sList.push({ id, repo: '' });
+                                    githubRepoState = { active: id, list: sList };
+                                    if (typeof updateGlobalList === 'function') { updateGlobalList('github_repo_state', githubRepoState); }
+                                } catch {}
                                 renderGithubRepoList();
+                                if (githubTestStatus) { githubTestStatus.textContent = 'OK (saved)'; githubTestStatus.style.color = 'var(--accent-mint)'; }
+                            } else {
+                                // Show status code for easier debugging
+                                if (githubTestStatus) { githubTestStatus.textContent = `OK (save failed ${res.status})`; githubTestStatus.style.color = 'var(--accent-yellow)'; }
                             }
-                        } catch {}
+                        } catch {
+                            if (githubTestStatus) { githubTestStatus.textContent = 'OK (save failed)'; githubTestStatus.style.color = 'var(--accent-yellow)'; }
+                        }
                     }
                 });
             // Provider section toggle (OpenAI models list)
@@ -7088,28 +7675,7 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     }
                 });
 
-                // GitHub multi repos
-                if (ghAddRepoBtn) ghAddRepoBtn.addEventListener('click', async () => {
-                    const token = (githubTokenInput?.value || '').trim();
-                    const repo  = (githubRepoInput?.value || '').trim();
-                    if (!token || !repo) return;
-                    // Proxy-only: require server storage
-                    {
-                        if (!FINAL_SUPABASE_URL || !FINAL_SUPABASE_KEY) return;
-                        await detectFnVariants();
-                        const baseFn = FINAL_SUPABASE_URL.replace(/\/$/, '') + '/functions/v1';
-                        const headersFn = await buildFnHeaders();
-                        // No save-ai-api-config for GitHub; keep connections-manager for GitHub
-                        const res = await fetch(baseFn + '/connections-manager', { method: 'POST', headers: headersFn, body: JSON.stringify({ type: 'github', label: repo, base_url: repo, api_key: token }) });
-                        if (!res.ok) return;
-                        const { id } = await res.json();
-                        const list = JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]');
-                        list.push({ id, repo, server: true });
-                        localStorage.setItem(API_KEYS.gh_multi, JSON.stringify(list));
-                        if (!localStorage.getItem(API_KEYS.gh_active)) localStorage.setItem(API_KEYS.gh_active, id);
-                        renderGithubRepoList();
-                    }
-                });
+                // GitHub multi repos: removed; classic token is account-level and repos are loaded dynamically
             }
 
             function renderLlmApiList() {
@@ -7181,15 +7747,21 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             function renderGithubRepoList() {
                 if (!ghRepoListEl) return;
-                const list = JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]');
-                const activeId = localStorage.getItem(API_KEYS.gh_active);
+                // Merge localStorage and in-memory mirrors
+                const lsList = (() => { try { return JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]'); } catch { return []; } })();
+                const lsActive = (() => { try { return localStorage.getItem(API_KEYS.gh_active) || ''; } catch { return ''; } })();
+                const memList = Array.isArray(window.__PM_GH_REPO_LIST) ? window.__PM_GH_REPO_LIST : [];
+                const memActive = (typeof window.__PM_GH_ACTIVE === 'string' && window.__PM_GH_ACTIVE) ? window.__PM_GH_ACTIVE : '';
+                const list = (lsList && lsList.length) ? lsList : memList;
+                const activeId = lsActive || memActive || '';
                 ghRepoListEl.innerHTML = '';
                 list.forEach(({ id, repo }) => {
                     const row = document.createElement('div');
                     row.className = 'flex items-center justify-between border border-[--border-dark] rounded-md p-2';
                     const left = document.createElement('div');
                     left.className = 'text-xs';
-                    left.innerHTML = `<div class=\"font-semibold\">${S(repo)} ${id===activeId ? '<span class=\\"ml-2 px-1 rounded border border-[--border-dark] text-[10px]\\">Active</span>' : ''}</div><div class=\"text-[--text-muted-dark]\">Token: ••••••••</div>`;
+                    const label = repo && repo.trim() ? repo : 'GitHub';
+                    left.innerHTML = `<div class=\"font-semibold\">${S(label)} ${id===activeId ? '<span class=\\"ml-2 px-1 rounded border border-[--border-dark] text-[10px]\\">Active</span>' : ''}</div><div class=\"text-[--text-muted-dark]\">Token: ••••••••</div>`;
                     const right = document.createElement('div');
                     right.className = 'flex items-center gap-2';
                     const testBtn = document.createElement('button');
@@ -7209,7 +7781,16 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                         setStatus(status, ok, 'OK', 'Fail');
                     });
                     setBtn.addEventListener('click', () => {
-                        localStorage.setItem(API_KEYS.gh_active, id);
+                        try { localStorage.setItem(API_KEYS.gh_active, id); } catch {}
+                        try { window.__PM_GH_ACTIVE = id; } catch {}
+                        // Persist active id to Supabase even if repo isn't chosen yet
+                        try {
+                            githubRepoState = githubRepoState || { active: '', list: [] };
+                            const sList = Array.isArray(githubRepoState.list) ? githubRepoState.list.slice(0) : [];
+                            if (!sList.some(i => i.id === id)) sList.push({ id, repo: '' });
+                            githubRepoState = { active: id, list: sList };
+                            if (typeof updateGlobalList === 'function') { updateGlobalList('github_repo_state', githubRepoState); }
+                        } catch {}
                         renderGithubRepoList();
                     });
                     delBtn.addEventListener('click', async () => {
@@ -7220,9 +7801,19 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                 await fetch(url, { method: 'DELETE', headers });
                             }
                         } catch {}
-                        const cur = JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]');
-                        localStorage.setItem(API_KEYS.gh_multi, JSON.stringify(cur.filter(i => i.id !== id)));
-                        if (localStorage.getItem(API_KEYS.gh_active) === id) localStorage.removeItem(API_KEYS.gh_active);
+                        const cur = (() => { try { return JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]'); } catch { return []; } })();
+                        try { localStorage.setItem(API_KEYS.gh_multi, JSON.stringify(cur.filter(i => i.id !== id))); } catch {}
+                        try { if (localStorage.getItem(API_KEYS.gh_active) === id) localStorage.removeItem(API_KEYS.gh_active); } catch {}
+                        try { window.__PM_GH_REPO_LIST = (Array.isArray(window.__PM_GH_REPO_LIST) ? window.__PM_GH_REPO_LIST : []).filter(i => i.id !== id); } catch {}
+                        try { if (window.__PM_GH_ACTIVE === id) window.__PM_GH_ACTIVE = ''; } catch {}
+                        // Persist removal to Supabase global list so it doesn't reappear on reload
+                        try {
+                            githubRepoState = githubRepoState || { active: '', list: [] };
+                            const sList = Array.isArray(githubRepoState.list) ? githubRepoState.list.filter(i => i.id !== id) : [];
+                            const active = (githubRepoState.active === id) ? '' : githubRepoState.active;
+                            githubRepoState = { active, list: sList };
+                            if (typeof updateGlobalList === 'function') { updateGlobalList('github_repo_state', githubRepoState); }
+                        } catch {}
                         renderGithubRepoList();
                     });
                     right.appendChild(testBtn); right.appendChild(setBtn); right.appendChild(delBtn); right.appendChild(status);
@@ -7984,19 +8575,85 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 if (!target) return;
                 target.innerHTML = '<div class="text-[--text-muted-dark]">Loading…</div>';
                 try {
+                    // Show cached first if available for a snappy UX
+                    try {
+                        const conn = getActiveGithubConn();
+                        const cacheKey = conn?.id;
+                        const cached = cacheKey ? (githubRepoCache[cacheKey] || null) : null;
+                        if (cached && Array.isArray(cached.items) && cached.items.length) {
+                            target.innerHTML = '';
+                            const byOwner = {};
+                            (cached.items || []).forEach(r => {
+                                const owner = (r.full || '').split('/')[0] || 'unknown';
+                                if (!byOwner[owner]) byOwner[owner] = [];
+                                byOwner[owner].push(r);
+                            });
+                            Object.keys(byOwner).sort().forEach(owner => {
+                                const header = document.createElement('div');
+                                header.className = 'prompt-group-header flex items-center gap-2';
+                                header.innerHTML = `<span class="toggle-icon">▶</span><span class="text-xs font-semibold text-[--text-muted-dark]">${S(owner)}</span>`;
+                                const list = document.createElement('div');
+                                list.className = 'space-y-1 pl-2 mt-1 hidden';
+                                let expanded = false;
+                                header.addEventListener('click', () => {
+                                    expanded = !expanded;
+                                    header.querySelector('.toggle-icon').textContent = expanded ? '▼' : '▶';
+                                    header.classList.toggle('expanded', expanded);
+                                    list.classList.toggle('hidden', !expanded);
+                                });
+                                (byOwner[owner] || []).sort((a,b) => a.full.localeCompare(b.full)).forEach(({ id, full, name, isPrivate }) => {
+                                    const row = document.createElement('div');
+                                    row.className = 'drawer-row';
+                                    row.innerHTML = `<div class="truncate flex items-center gap-2"><span class="toggle-icon">▶</span><span class="font-mono">${S(name)}</span>${isPrivate ? ' <span class=\"text-[--text-muted-dark]\">(private)</span>' : ''}</div>`;
+                                    row.dataset.repoId = id;
+                                    row.dataset.repoFull = full;
+                                    row.addEventListener('click', () => {
+                                        const icon = row.querySelector('.toggle-icon');
+                                        if (icon) icon.textContent = icon.textContent === '▶' ? '▼' : '▶';
+                                        try {
+                                            currentGithubRepo = { id, full };
+                                            target.querySelectorAll('.drawer-row').forEach(r => r.classList.remove('selected'));
+                                            row.classList.add('selected');
+                                        } catch {}
+                                    });
+                                    list.appendChild(row);
+                                });
+                                target.appendChild(header);
+                                target.appendChild(list);
+                            });
+                        }
+                    } catch {}
                     // Prefer listing both personal and org repos via REST
                     const res = await githubRequest('user/repos?per_page=100', { method: 'GET' });
-                    if (!res.ok) throw new Error('repos request failed');
+                    if (!res.ok) {
+                        const t = await res.text().catch(() => '');
+                        const code = res.status;
+                        const msg = code === 401 ? 'Login required (Supabase session)' : `Failed to load repos (${code})`;
+                        target.innerHTML = `<div class="text-[--accent-yellow]">${S(msg)}</div>`;
+                        return;
+                    }
                     const repos = await res.json();
                     target.innerHTML = '';
                     // Group by owner/org prefix before '/'
                     const byOwner = {};
+                    const items = [];
                     (repos || []).forEach(r => {
                         const full = r.full_name || `${r.owner?.login || ''}/${r.name}`;
                         const owner = full.split('/')[0] || 'unknown';
+                        const item = { id: String(r.id || full), full, name: r.name || full.split('/')[1] || full, isPrivate: !!r.private };
+                        items.push(item);
                         if (!byOwner[owner]) byOwner[owner] = [];
-                        byOwner[owner].push({ id: String(r.id || full), full, name: r.name || full.split('/')[1] || full, isPrivate: !!r.private });
+                        byOwner[owner].push(item);
                     });
+                    // Cache and persist for fast subsequent loads
+                    try {
+                        const conn = getActiveGithubConn();
+                        if (conn && conn.id) {
+                            githubRepoCache = githubRepoCache || {};
+                            githubRepoCache[conn.id] = { ts: new Date().toISOString(), items };
+                            if (typeof updateGlobalList === 'function') { updateGlobalList('github_repo_cache', githubRepoCache); }
+                        }
+                    } catch {}
             Object.keys(byOwner).sort().forEach(owner => {
                         const header = document.createElement('div');
                         header.className = 'prompt-group-header flex items-center gap-2';
@@ -8036,7 +8693,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     });
                     if (!Object.keys(byOwner).length) target.innerHTML = '<div class="text-[--text-muted-dark]">No repositories found.</div>';
                 } catch (e) {
-                    target.innerHTML = '<div class="text-[--accent-red]">Failed to load repos</div>';
+                    const hint = (e && e.message && /Active GitHub connection/.test(String(e.message))) ? 'No connection found. Click Test to save your GitHub token.' : 'Failed to load repos';
+                    target.innerHTML = `<div class="text-[--accent-red]">${S(hint)}</div>`;
                 }
             }
 
@@ -8071,6 +8729,45 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
 
             // Global Load/Rebuild removed
             if (ghLoadReposBtn) ghLoadReposBtn.addEventListener('click', () => loadAccessibleRepos(ghAvailableReposEl));
+            if (ghSaveRepoBtn) ghSaveRepoBtn.addEventListener('click', () => {
+                try {
+                    const active = getActiveGithubConn();
+                    if (!active || !active.id) return;
+                    let full = '';
+                    try { if (currentGithubRepo && currentGithubRepo.full) full = currentGithubRepo.full; } catch {}
+                    if (!full) {
+                        const box = document.getElementById('github-available-repos');
+                        const sel = box ? box.querySelector('.drawer-row.selected') : null;
+                        if (sel && sel.dataset && sel.dataset.repoFull) full = sel.dataset.repoFull;
+                    }
+                    if (!full) return;
+                    const list = (() => { try { return JSON.parse(localStorage.getItem(API_KEYS.gh_multi) || '[]'); } catch { return []; } })();
+                    const idx = list.findIndex(i => i.id === active.id);
+                    const entry = { id: active.id, repo: full, server: true };
+                    if (idx >= 0) list[idx] = entry; else list.push(entry);
+                    try { localStorage.setItem(API_KEYS.gh_multi, JSON.stringify(list)); } catch {}
+                    try { localStorage.setItem(API_KEYS.gh_active, active.id); } catch {}
+                    // Mirror to memory
+                    try {
+                        const mem = Array.isArray(window.__PM_GH_REPO_LIST) ? window.__PM_GH_REPO_LIST.slice(0) : [];
+                        const mIdx = mem.findIndex(i => i.id === active.id);
+                        if (mIdx >= 0) mem[mIdx] = entry; else mem.push(entry);
+                        window.__PM_GH_REPO_LIST = mem;
+                        window.__PM_GH_ACTIVE = active.id;
+                    } catch {}
+                    // Persist to Supabase global list for durability across sessions
+                    try {
+                        githubRepoState = githubRepoState || { active: '', list: [] };
+                        const sList = Array.isArray(githubRepoState.list) ? githubRepoState.list.slice(0) : [];
+                        const sIdx = sList.findIndex(i => i.id === active.id);
+                        if (sIdx >= 0) sList[sIdx] = { id: active.id, repo: full };
+                        else sList.push({ id: active.id, repo: full });
+                        githubRepoState = { active: active.id, list: sList };
+                        if (typeof updateGlobalList === 'function') { updateGlobalList('github_repo_state', githubRepoState); }
+                    } catch {}
+                    renderGithubRepoList();
+                } catch {}
+            });
             if (ghReposToggle) ghReposToggle.addEventListener('click', () => {
                 const box = document.getElementById('github-available-repos');
                 if (!box) return;
@@ -8422,8 +9119,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                     const suffix = branch ? `?ref=${encodeURIComponent(branch)}` : '';
                     const head = await githubRequest(`repos/${repoFull}/contents/${encodeURIComponent(path)}${suffix}`, { method: 'GET' });
                     if (head.ok) {
-                        const info = await head.json();
-                        sha = info.sha || null;
+                        const h = await head.json();
+                        sha = h.sha || null;
                     }
                 } catch {}
                 const body = {
@@ -10489,10 +11186,8 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                 try {
                     const successful = document.execCommand('copy');
                     if (successful) {
-                        copyPromptBtn.classList.add('text-green-500');
-                        setTimeout(() => {
-                            copyPromptBtn.classList.remove('text-green-500');
-                        }, 2000);
+                        copyPromptBtn.classList.add('copied');
+                        setTimeout(() => { copyPromptBtn.classList.remove('copied'); }, 1500);
                     }
                 } catch (err) {
                     console.error('Failed to copy text: ', err);
@@ -11748,6 +12443,34 @@ Write, right here, right now. Show me your mana!" class="form-input font-mono w-
                                     }
                                 } catch {}
                                 await loadDataFromSupabase(); // Espera os dados do Supabase carregarem
+                            // Hydrate GitHub connection state from server lists into memory mirrors
+                            try {
+                                if (githubRepoState && Array.isArray(githubRepoState.list)) {
+                                    // Hydrate memory mirrors
+                                    const list = githubRepoState.list.map(({ id, repo }) => ({ id, repo, server: true }));
+                                    window.__PM_GH_REPO_LIST = list;
+                                    // Ensure we have an active id; if missing, pick the first
+                                    let activeId = githubRepoState.active || '';
+                                    if (!activeId && list.length) {
+                                        activeId = list[0].id;
+                                        // Persist this improvement
+                                        try {
+                                            githubRepoState = { active: activeId, list: githubRepoState.list.slice(0) };
+                                            if (typeof updateGlobalList === 'function') { updateGlobalList('github_repo_state', githubRepoState); }
+                                        } catch {}
+                                    }
+                                    window.__PM_GH_ACTIVE = activeId || '';
+                                    renderGithubRepoList();
+                                    // If logged in and we have an active connection, auto-load repos (cache-first inside loader)
+                                    try {
+                                        const { data } = await supabaseClient.auth.getSession();
+                                        if (data?.session && (typeof getActiveGithubConn === 'function') && getActiveGithubConn()) {
+                                            try { loadAccessibleRepos(document.getElementById('github-available-repos')); } catch {}
+                                            try { loadAccessibleRepos(document.getElementById('dock-github-available-repos')); } catch {}
+                                        }
+                                    } catch {}
+                                }
+                            } catch {}
                 populateLlmSelect();
                 // Initialize Chat model list
                 try { populateChatModelSelect(); } catch {}
